@@ -43,6 +43,8 @@ Open the `serviceUrl` output in your browser to see **Hello, World!**
 
 See [docs/PLAN.md](docs/PLAN.md) for architecture details, Phase 2 (custom domain), and `@pulumi/docker` explanation.
 
+Custom domain setup for **resume.solla.app**: [docs/CUSTOM-DOMAIN.md](docs/CUSTOM-DOMAIN.md)
+
 See [`.env.example`](.env.example) for local environment variable placeholders—**never commit real credentials**.
 
 ## Repository layout

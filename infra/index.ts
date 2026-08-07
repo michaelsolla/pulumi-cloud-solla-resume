@@ -4,8 +4,10 @@ import * as gcp from "@pulumi/gcp";
 import * as pulumi from "@pulumi/pulumi";
 
 const gcpConfig = new pulumi.Config("gcp");
+const config = new pulumi.Config();
 const project = gcpConfig.require("project");
 const region = gcpConfig.get("region") || "us-central1";
+const customDomain = config.get("customDomain") || "resume.solla.app";
 
 const appPath = path.join(__dirname, "..", "app");
 const repositoryId = "hello-world";
@@ -99,6 +101,31 @@ new gcp.cloudrunv2.ServiceIamMember("hello-world-public", {
   member: "allUsers",
 });
 
+const domainMapping = new gcp.cloudrun.DomainMapping(
+  "resume-domain",
+  {
+    location: region,
+    name: customDomain,
+    metadata: {
+      namespace: project,
+    },
+    spec: {
+      routeName: service.name,
+    },
+  },
+  { dependsOn: [service] },
+);
+
 export const repositoryUrl = pulumi.interpolate`${region}-docker.pkg.dev/${project}/${repositoryId}`;
 export const imageUrl = image.imageName;
 export const serviceUrl = service.uri;
+export const customDomainUrl = pulumi.interpolate`https://${customDomain}`;
+export const dnsRecords = domainMapping.statuses.apply((statuses) =>
+  statuses.flatMap((status) =>
+    (status.resourceRecords ?? []).map((record) => ({
+      name: record.name,
+      type: record.type,
+      value: record.rrdata,
+    })),
+  ),
+);
