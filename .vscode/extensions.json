@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "pulumi.pulumi-lsp",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode"
+  ]
+}

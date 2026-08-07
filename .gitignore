@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+bin/
+*.tsbuildinfo
+
+# Pulumi
+.pulumi/
+Pulumi.*.yaml
+!Pulumi.yaml
+
+# Environment and secrets — never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.key
+
+# GCP credentials and local gcloud state
+credentials.json
+*-credentials.json
+service-account*.json
+.gcloud/
+application_default_credentials.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors and IDEs
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# Logs and temp files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+tmp/
+temp/
