@@ -1,0 +1,17 @@
+{
+  "name": "pulumi-gcp-ed-infra",
+  "main": "index.ts",
+  "private": true,
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@pulumi/docker": "^4.6.0",
+    "@pulumi/gcp": "^8.20.0",
+    "@pulumi/pulumi": "^3.160.0"
+  }
+}

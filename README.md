@@ -6,35 +6,42 @@ This repository is an early-stage portfolio project. The goal is to explore mode
 
 ## Status
 
-🚧 **Scaffolding only** — project structure and repo hygiene are in place; infrastructure code has not been added yet.
+🚧 **Phase 1 in progress** — Hello World container + Pulumi program for Cloud Run. See [docs/PLAN.md](docs/PLAN.md) for the full architecture and roadmap.
 
 ## Planned focus
 
 - Provisioning and managing GCP resources with Pulumi
-- TypeScript (or Node.js) as the primary language
-- Clear stack organization, previews, and safe deployment workflows
-- Examples that demonstrate practical cloud engineering skills
+- TypeScript as the primary language
+- Docker build and push via `@pulumi/docker`
+- Cloud Run deployment with a path to a custom domain (Phase 2)
 
 ## Prerequisites
 
-When infrastructure code lands here, you will likely need:
-
 - [Pulumi CLI](https://www.pulumi.com/docs/install/)
-- [Node.js](https://nodejs.org/) (LTS recommended, for TypeScript)
+- [Node.js](https://nodejs.org/) (LTS recommended)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (running locally)
 - [Google Cloud SDK](https://cloud.google.com/sdk) (`gcloud`)
-- A GCP project with billing enabled
-- Application Default Credentials or a service account with appropriate IAM roles
+- GCP project with billing enabled (`pulumi-gcp-ed-msolla`)
+- Application Default Credentials (`gcloud auth application-default login`)
 
 ## Getting started
 
-Infrastructure code is not checked in yet. Once the first stack is added, typical workflow will look like:
-
 ```bash
-pulumi login
+# One-time Docker auth for Artifact Registry
+gcloud auth configure-docker us-central1-docker.pkg.dev
+
+cd infra
+npm install
 pulumi stack init dev
+pulumi config set gcp:project pulumi-gcp-ed-msolla
+pulumi config set gcp:region us-central1
 pulumi preview
 pulumi up
 ```
+
+Open the `serviceUrl` output in your browser to see **Hello, World!**
+
+See [docs/PLAN.md](docs/PLAN.md) for architecture details, Phase 2 (custom domain), and `@pulumi/docker` explanation.
 
 See [`.env.example`](.env.example) for local environment variable placeholders—**never commit real credentials**.
 
@@ -42,21 +49,15 @@ See [`.env.example`](.env.example) for local environment variable placeholders�
 
 ```
 .
-├── README.md           # This file
-├── LICENSE             # MIT
-├── .gitignore          # Pulumi, Node, GCP, and IDE ignores
-└── .env.example        # Non-secret environment variable template
+├── app/                # Hello World container (Dockerfile + server.js)
+├── infra/              # Pulumi TypeScript program
+├── docs/
+│   └── PLAN.md         # Architecture and phased rollout plan
+├── README.md
+├── LICENSE
+├── .gitignore
+└── .env.example
 ```
-
-Additional directories (e.g. `infra/`, `src/`) will be added as the project takes shape.
-
-## Roadmap
-
-- [ ] Choose project structure (single stack vs. multi-stack)
-- [ ] Add minimal Pulumi + `@pulumi/gcp` TypeScript program
-- [ ] Configure GCP project, region, and authentication
-- [ ] First deployable resource (e.g. Cloud Storage bucket or Cloud Run service)
-- [ ] CI preview workflow (GitHub Actions + Pulumi)
 
 ## License
 

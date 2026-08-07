@@ -1,0 +1,6 @@
+name: pulumi-gcp-ed
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+description: Hello World on Google Cloud Run, built and deployed with Pulumi
