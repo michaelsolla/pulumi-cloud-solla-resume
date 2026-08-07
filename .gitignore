@@ -6,25 +6,63 @@ dist/
 bin/
 *.tsbuildinfo
 
-# Pulumi
+# Pulumi — stack configs may contain encrypted secrets; state is local-only
 .pulumi/
 Pulumi.*.yaml
 !Pulumi.yaml
+*.pulumi.backup
 
 # Environment and secrets — never commit these
 .env
 .env.*
 !.env.example
+*.secret
+*.secrets
+secrets/
+.secrets/
+
+# Private keys and certificates
 *.pem
 *.p12
+*.pfx
 *.key
+*.crt
+*.cer
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
 
 # GCP credentials and local gcloud state
 credentials.json
 *-credentials.json
 service-account*.json
-.gcloud/
+gcp-*.json
+*-sa.json
+firebase-adminsdk*.json
+client_secret*.json
+oauth*.json
+token.json
 application_default_credentials.json
+.gcloud/
+.config/gcloud/
+
+# Cloud and IaC artifacts that may contain sensitive data
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+cdk.out/
+
+# Package manager auth (often contains registry tokens)
+.npmrc
+.yarnrc
+.pnpm-store/
+
+# Docker local overrides (may reference secrets or local paths)
+docker-compose.override.yml
+docker-compose.*.local.yml
 
 # OS
 .DS_Store
