@@ -1,4 +1,4 @@
-name: pulumi-cloud-solla-resume
+name: pulumi-gcp-ed
 runtime:
   name: nodejs
   options:
