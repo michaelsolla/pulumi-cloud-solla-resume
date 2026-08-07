@@ -77,6 +77,10 @@ Thumbs.db
 *.swo
 *~
 
+# Local Cursor / Pulumi agent skills (not part of the portfolio)
+.agents/
+skills-lock.json
+
 # Logs and temp files
 *.log
 npm-debug.log*
