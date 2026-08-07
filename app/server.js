@@ -82,8 +82,8 @@ const homePage = `<!DOCTYPE html>
     </p>
     <p class="repo-links">
       Source code:
-      <a href="https://github.com/michaelsolla/Pulumi-GCP-Ed" rel="noopener noreferrer" target="_blank">GitHub</a>
-      <a href="https://gitlab.com/michael.solla/Pulumi-GCP-Ed" rel="noopener noreferrer" target="_blank">GitLab</a>
+      <a href="https://github.com/michaelsolla/pulumi-cloud-solla-resume" rel="noopener noreferrer" target="_blank">GitHub</a>
+      <a href="https://gitlab.com/michael.solla/pulumi-cloud-solla-resume" rel="noopener noreferrer" target="_blank">GitLab</a>
     </p>
     <div class="badges" aria-label="Tech stack">
       <span class="badge">Docker</span>

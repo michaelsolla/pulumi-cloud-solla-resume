@@ -1,5 +1,5 @@
 {
-  "name": "pulumi-gcp-ed-infra",
+  "name": "pulumi-cloud-solla-resume-infra",
   "main": "index.ts",
   "private": true,
   "scripts": {

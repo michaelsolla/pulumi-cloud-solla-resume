@@ -1,8 +1,6 @@
-# Pulumi GCP Ed
+# Pulumi Cloud — Solla Resume
 
-Infrastructure-as-code experiments and learning projects on **Google Cloud Platform**, built with [Pulumi](https://www.pulumi.com/).
-
-This repository is an early-stage portfolio project. The goal is to explore modern cloud provisioning patterns, document what I learn along the way, and eventually deploy real workloads on GCP using Pulumi—likely in **TypeScript** (and possibly inspired by patterns from [Halloumi](https://github.com/pulumi/halloumi)).
+This repository hosts a multi-cloud portfolio resume site — currently deployed on **Google Cloud Run**, with **AWS** planned. Infrastructure is managed with [Pulumi](https://www.pulumi.com/) TypeScript.
 
 ## Status
 

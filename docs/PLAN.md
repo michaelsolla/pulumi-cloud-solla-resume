@@ -40,7 +40,7 @@ flowchart LR
 ## Repository layout
 
 ```
-Pulumi-GCP-Ed/
+Pulumi-cloud-solla-resume/
 ├── app/                    # Hello World container source
 │   ├── Dockerfile
 │   └── server.js
