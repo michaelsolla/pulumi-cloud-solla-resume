@@ -2,6 +2,7 @@ import * as path from "path";
 import * as docker from "@pulumi/docker";
 import * as gcp from "@pulumi/gcp";
 import * as pulumi from "@pulumi/pulumi";
+import { GitlabCiWif } from "./gitlab-wif";
 
 const gcpConfig = new pulumi.Config("gcp");
 const config = new pulumi.Config();
@@ -16,6 +17,10 @@ const containerPlatform = "linux/amd64";
 const requiredApis = [
   "artifactregistry.googleapis.com",
   "run.googleapis.com",
+  // Needed for GitLab CI Workload Identity Federation (keyless auth).
+  "iam.googleapis.com",
+  "iamcredentials.googleapis.com",
+  "sts.googleapis.com",
 ];
 
 const enabledApis = requiredApis.map(
@@ -29,6 +34,22 @@ const enabledApis = requiredApis.map(
 const projectInfo = gcp.organizations.getProjectOutput({
   projectId: project,
 });
+
+// GitLab project path in `namespace/project` form. Only pipelines running in
+// this exact GitLab project can authenticate via Workload Identity
+// Federation; see gitlab-wif.ts for the full handshake.
+const gitlabProjectPath =
+  config.get("gitlabProjectPath") ||
+  "michael.solla/pulumi-cloud-solla-resume";
+
+const gitlabCiWif = new GitlabCiWif(
+  "gitlab-ci",
+  {
+    projectId: project,
+    gitlabProjectPath,
+  },
+  { dependsOn: enabledApis },
+);
 
 const repository = new gcp.artifactregistry.Repository(
   "hello-world-repo",
@@ -129,3 +150,8 @@ export const dnsRecords = domainMapping.statuses.apply((statuses) =>
     })),
   ),
 );
+
+// Plug these into .gitlab-ci.yml's GCP_WORKLOAD_IDENTITY_PROVIDER / GCP_SERVICE_ACCOUNT
+// (or into GitLab CI/CD variables) after the first `pulumi up`.
+export const gitlabCiWifProviderName = gitlabCiWif.providerName;
+export const gitlabCiServiceAccountEmail = gitlabCiWif.serviceAccountEmail;

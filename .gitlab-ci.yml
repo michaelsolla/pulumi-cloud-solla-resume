@@ -1,0 +1,83 @@
+# GitLab CI/CD pipeline for the Pulumi GCP stack in `infra/`.
+#
+# Auth uses GCP Workload Identity Federation (WIF) -- see infra/gitlab-wif.ts
+# for the resources this depends on. No static GCP credentials are stored in
+# GitLab: each job exchanges a short-lived GitLab OIDC token for GCP access by
+# impersonating the `gitlab-ci-deployer` service account.
+#
+# Required GitLab CI/CD variables (Settings > CI/CD > Variables):
+#   PULUMI_ACCESS_TOKEN  - masked + protected. The only real secret here;
+#                          Pulumi state lives in Pulumi Cloud, not GCP.
+#
+# GCP_WORKLOAD_IDENTITY_PROVIDER and GCP_SERVICE_ACCOUNT below come straight
+# out of `pulumi stack output gitlabCiWifProviderName` /
+# `gitlabCiServiceAccountEmail` after the first `pulumi up` -- update the
+# placeholders (or move them into GitLab CI/CD variables) once you have them.
+
+default:
+  image: google/cloud-sdk:slim
+  before_script:
+    # Self-contained: installs Node + Pulumi CLI on top of the gcloud image so
+    # this file has no external Docker image dependency beyond Google's own.
+    # For faster pipelines later, swap this for a prebuilt image with
+    # node/pulumi/gcloud baked in.
+    - apt-get update -qq && apt-get install -y -qq curl gnupg >/dev/null
+    - curl -fsSL https://deb.nodesource.com/setup_20.x | bash - >/dev/null
+    - apt-get install -y -qq nodejs >/dev/null
+    - curl -fsSL https://get.pulumi.com | sh
+    - export PATH="$PATH:$HOME/.pulumi/bin"
+    - cd "${CI_PROJECT_DIR}/infra" && npm ci
+
+variables:
+  PULUMI_STACK: dev
+  GCP_WORKLOAD_IDENTITY_PROVIDER: "projects/569199553236/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider"
+  GCP_SERVICE_ACCOUNT: "gitlab-ci-deployer@pulumi-gcp-ed-msolla.iam.gserviceaccount.com"
+
+stages:
+  - preview
+  - deploy
+
+# Shared WIF handshake, reused by both jobs via `extends`. Each job requests
+# its own short-lived GCP_ID_TOKEN (id_tokens are minted per job, not shared),
+# but the token exchange + login steps only need to be written once.
+.gcp_wif_auth:
+  id_tokens:
+    GCP_ID_TOKEN:
+      aud: https://iam.googleapis.com/${GCP_WORKLOAD_IDENTITY_PROVIDER}
+  before_script:
+    - !reference [default, before_script]
+    # 1. Save the GitLab-issued OIDC token that GCP will exchange for access.
+    - echo "${GCP_ID_TOKEN}" > /tmp/gitlab-oidc-token.jwt
+    # 2. Build an `external_account` credential config that impersonates
+    #    GCP_SERVICE_ACCOUNT using that token. This only succeeds because the
+    #    token's `project_path` claim matches the attribute condition on the
+    #    WIF provider, and that principal set holds `iam.workloadIdentityUser`
+    #    on the service account (both set up in infra/gitlab-wif.ts).
+    - >
+      gcloud iam workload-identity-pools create-cred-config
+      "${GCP_WORKLOAD_IDENTITY_PROVIDER}"
+      --service-account="${GCP_SERVICE_ACCOUNT}"
+      --credential-source-file=/tmp/gitlab-oidc-token.jwt
+      --output-file=/tmp/gcp-cred-config.json
+    # 3. Exchange it for short-lived GCP credentials. Pulumi's GCP provider
+    #    picks these up automatically via Application Default Credentials.
+    - gcloud auth login --cred-file=/tmp/gcp-cred-config.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-cred-config.json
+    - pulumi login
+    - pulumi stack select "${PULUMI_STACK}"
+
+pulumi:preview:
+  extends: .gcp_wif_auth
+  stage: preview
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - pulumi preview --stack "${PULUMI_STACK}"
+
+pulumi:deploy:
+  extends: .gcp_wif_auth
+  stage: deploy
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  script:
+    - pulumi up --yes --stack "${PULUMI_STACK}"
