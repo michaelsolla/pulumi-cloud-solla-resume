@@ -16,6 +16,12 @@
 
 default:
   image: google/cloud-sdk:slim
+  # `docker.Image` (infra/index.ts) builds+pushes via a real Docker daemon, not
+  # a CLI shell-out, so the runner needs one. Docker-in-Docker gives every job
+  # a disposable daemon reachable at tcp://docker:2375; GitLab.com's shared
+  # runners run in privileged mode already, so no extra runner config needed.
+  services:
+    - docker:24-dind
   before_script:
     # Self-contained: installs Node + Pulumi CLI on top of the gcloud image so
     # this file has no external Docker image dependency beyond Google's own.
@@ -32,6 +38,11 @@ variables:
   PULUMI_STACK: dev
   GCP_WORKLOAD_IDENTITY_PROVIDER: "projects/569199553236/locations/global/workloadIdentityPools/gitlab-pool/providers/gitlab-provider"
   GCP_SERVICE_ACCOUNT: "gitlab-ci-deployer@pulumi-gcp-ed-msolla.iam.gserviceaccount.com"
+  # Point the Docker daemon that Pulumi's docker provider looks for at the
+  # dind service. No TLS: both containers are ephemeral and only exist for
+  # this one job, so there's no other tenant to protect against.
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
 
 stages:
   - preview

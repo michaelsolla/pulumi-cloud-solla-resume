@@ -98,6 +98,7 @@ export class GitlabCiWif extends pulumi.ComponentResource {
       "roles/artifactregistry.admin",
       "roles/serviceusage.serviceUsageAdmin",
       "roles/browser", // resourcemanager.projects.get, used by getProjectOutput()
+      "roles/compute.viewer", // compute.regions.list, probed by the gcp provider on startup
     ];
 
     for (const role of projectRoles) {
