@@ -10,6 +10,14 @@ export interface GitlabCiWifArgs {
    * exact GitLab project can federate as the deployer service account.
    */
   gitlabProjectPath: string;
+  /**
+   * Email of the runtime service account Cloud Run revisions run as (the
+   * default compute SA, unless the service sets a custom one). Deploying a
+   * new revision requires `iam.serviceaccounts.actAs` on this exact SA --
+   * granting it project-wide would let the deployer impersonate every
+   * service account in the project.
+   */
+  computeDefaultServiceAccountEmail: pulumi.Input<string>;
 }
 
 /**
@@ -112,6 +120,19 @@ export class GitlabCiWif extends pulumi.ComponentResource {
         { parent: this },
       );
     }
+
+    // Deploying a Cloud Run revision requires the caller to be able to
+    // `actAs` the runtime service account, not just manage the Cloud Run
+    // resource itself -- scoped to that one SA, not project-wide.
+    new gcp.serviceaccount.IAMMember(
+      `${name}-compute-sa-actas`,
+      {
+        serviceAccountId: pulumi.interpolate`projects/-/serviceAccounts/${args.computeDefaultServiceAccountEmail}`,
+        role: "roles/iam.serviceAccountUser",
+        member: pulumi.interpolate`serviceAccount:${deployer.email}`,
+      },
+      { parent: this },
+    );
 
     // The actual "keyless" trust edge: only principals matching the
     // attribute condition above may impersonate the deployer SA.
