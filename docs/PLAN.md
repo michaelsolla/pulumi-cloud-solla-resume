@@ -180,21 +180,55 @@ When a domain is ready (e.g. `hello.example.com`):
 
 ---
 
+## Known follow-ups
+
+Not blocking, not urgent — the live site is unaffected by these. Tracked here so
+they don't get forgotten mid-interview-prep.
+
+- **Cloud Run doesn't redeploy on a new image push.** `hello-world-image`'s
+  `imageName` output is a floating `:latest` tag (a static string), so Pulumi
+  never sees a diff on that property and `gcp.cloudrunv2.Service` doesn't
+  create a new revision, even though a new digest was just pushed underneath
+  the same tag. Fix: reference `image.repoDigest` (the immutable
+  `...@sha256:...` reference `@pulumi/docker`'s `Image` resource outputs)
+  instead of `image.imageName` in the Cloud Run container spec. That also
+  gives exact, unambiguous rollback — you always know precisely which digest
+  is live.
+- **Artifact Registry has no cleanup policy.** Every `pulumi up` (local or CI)
+  pushes a new image with nothing pruning old ones, so storage — and cost —
+  grows unbounded over time. Fix: add `cleanupPolicies` to the
+  `gcp.artifactregistry.Repository` resource (e.g. keep the most recent N
+  tagged versions, or delete anything older than X days). Runs natively in
+  GCP, no extra services needed.
+
+---
+
 ## Roadmap checklist
 
 - [x] Repo scaffolding (GitHub + GitLab)
 - [x] GCP account + local `gcloud` auth
 - [x] Security-focused `.gitignore`
 - [x] Phase 1 plan documented (this file)
-- [ ] Phase 1 implemented and deployed
-- [ ] Verify `*.run.app` URL in browser
-- [ ] Phase 2: custom domain + DNS
-- [ ] Optional: GitHub Actions / GitLab CI for `pulumi preview` on PRs
+- [x] Phase 1 implemented and deployed
+- [x] Verify `*.run.app` URL in browser
+- [x] Phase 2: custom domain + DNS
+- [x] GitLab CI for `pulumi preview`/`up` via Workload Identity Federation (keyless)
+- [ ] Cloud Run redeploys on new image digest (see Known follow-ups)
+- [ ] Artifact Registry cleanup policy (see Known follow-ups)
+- [ ] AWS deployment target
 
 ---
 
 ## Security notes
 
-- Never commit `.env`, service account JSON, or `Pulumi.*.yaml` stack configs.
+- Never commit `.env`, service account JSON, or files matching `*-credentials.json`/`service-account*.json`.
+- `Pulumi.yaml` and stack config files (e.g. `Pulumi.dev.yaml`) **are** committed —
+  they hold no secrets today (plain `gcp:project`/`gcp:region`), and Pulumi
+  encrypts any future `--secret` values as `secure:` blocks even when committed.
+  CI needs these files checked out to resolve required config like `gcp:project`.
 - Phase 1 allows **unauthenticated** access for demo purposes; lock down before production.
 - Prefer Application Default Credentials locally; avoid downloading service account keys.
+- GitLab CI authenticates keyless via GCP Workload Identity Federation (see
+  `infra/gitlab-wif.ts` and `.gitlab-ci.yml`) — no static service account key
+  is stored anywhere. `PULUMI_ACCESS_TOKEN` (masked + protected GitLab CI/CD
+  variable) is the only real secret in the pipeline.
