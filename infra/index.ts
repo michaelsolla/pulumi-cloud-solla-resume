@@ -47,6 +47,9 @@ const gitlabCiWif = new GitlabCiWif(
   {
     projectId: project,
     gitlabProjectPath,
+    computeDefaultServiceAccountEmail: projectInfo.number.apply(
+      (number) => `${number}-compute@developer.gserviceaccount.com`,
+    ),
   },
   { dependsOn: enabledApis },
 );
