@@ -6,10 +6,13 @@ dist/
 bin/
 *.tsbuildinfo
 
-# Pulumi — stack configs may contain encrypted secrets; state is local-only
+# Pulumi — stack config files are safe to commit (secrets stay encrypted as
+# `secure:` values); CI needs them checked out to resolve required config like
+# gcp:project. Block anything not explicitly allowlisted below.
 .pulumi/
 Pulumi.*.yaml
 !Pulumi.yaml
+!Pulumi.dev.yaml
 *.pulumi.backup
 
 # Environment and secrets — never commit these
