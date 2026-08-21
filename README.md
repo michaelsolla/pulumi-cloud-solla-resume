@@ -1,17 +1,14 @@
 # Pulumi Cloud — Solla Resume
 
-This repository hosts a multi-cloud portfolio resume site — currently deployed on **Google Cloud Run**, with **AWS** planned. Infrastructure is managed with [Pulumi](https://www.pulumi.com/) TypeScript.
+Portfolio resume site on **Google Cloud Run**, managed with [Pulumi](https://www.pulumi.com/) TypeScript. Public URL: [https://resume.solla.app](https://resume.solla.app).
+
+Kubernetes (local first, then cheap GKE Autopilot) is the next expansion. This repo stays **Pulumi-first** and **GCP-first**. See [docs/PLAN.md](docs/PLAN.md).
 
 ## Status
 
-🚧 **Phase 1 in progress** — Hello World container + Pulumi program for Cloud Run. See [docs/PLAN.md](docs/PLAN.md) for the full architecture and roadmap.
+**Live:** containerized resume on Cloud Run + custom domain, GitLab CI deploying via GCP Workload Identity Federation (keyless).
 
-## Planned focus
-
-- Provisioning and managing GCP resources with Pulumi
-- TypeScript as the primary language
-- Docker build and push via `@pulumi/docker`
-- Cloud Run deployment with a path to a custom domain (Phase 2)
+**Next:** hygiene (digest-pinned Cloud Run deploys + Artifact Registry cleanup), then local Kubernetes with Pulumi.
 
 ## Prerequisites
 
@@ -30,32 +27,27 @@ gcloud auth configure-docker us-central1-docker.pkg.dev
 
 cd infra
 npm install
-pulumi stack init dev
-pulumi config set gcp:project pulumi-gcp-ed-msolla
-pulumi config set gcp:region us-central1
+pulumi stack select dev
 pulumi preview
 pulumi up
 ```
 
-Open the `serviceUrl` output in your browser to see **Hello, World!**
+Open the `customDomainUrl` / `serviceUrl` output in a browser.
 
-See [docs/PLAN.md](docs/PLAN.md) for architecture details, Phase 2 (custom domain), and `@pulumi/docker` explanation.
+Custom domain notes: [docs/CUSTOM-DOMAIN.md](docs/CUSTOM-DOMAIN.md)
 
-Custom domain setup for **resume.solla.app**: [docs/CUSTOM-DOMAIN.md](docs/CUSTOM-DOMAIN.md)
-
-See [`.env.example`](.env.example) for local environment variable placeholders—**never commit real credentials**.
+See [`.env.example`](.env.example) for local placeholders — **never commit real credentials**.
 
 ## Repository layout
 
 ```
 .
-├── app/                # Hello World container (Dockerfile + server.js)
+├── app/                # Resume container (Dockerfile + server.js)
 ├── infra/              # Pulumi TypeScript program
 ├── docs/
-│   └── PLAN.md         # Architecture and phased rollout plan
+│   └── PLAN.md         # Architecture and roadmap
+├── .gitlab-ci.yml      # preview on MRs, deploy on main
 ├── README.md
-├── LICENSE
-├── .gitignore
 └── .env.example
 ```
 
