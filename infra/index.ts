@@ -61,6 +61,27 @@ const repository = new gcp.artifactregistry.Repository(
     location: region,
     format: "DOCKER",
     description: "Hello World container images for Cloud Run",
+    // Keep a small rollback window; drop stale untagged layers so storage
+    // (and cost) do not grow with every CI build.
+    cleanupPolicyDryRun: false,
+    cleanupPolicies: [
+      {
+        id: "keep-recent-hello-world",
+        action: "KEEP",
+        mostRecentVersions: {
+          keepCount: 5,
+          packageNamePrefixes: ["hello-world"],
+        },
+      },
+      {
+        id: "delete-old-untagged",
+        action: "DELETE",
+        condition: {
+          tagState: "UNTAGGED",
+          olderThan: "7d",
+        },
+      },
+    ],
   },
   { dependsOn: enabledApis },
 );
@@ -99,7 +120,9 @@ const service = new gcp.cloudrunv2.Service(
     template: {
       containers: [
         {
-          image: image.imageName,
+          // repoDigest is repository@sha256:... — unique per push, so Cloud
+          // Run actually rolls a new revision instead of sticking on :latest.
+          image: image.repoDigest,
           ports: { containerPort: 8080 },
           resources: {
             limits: {
@@ -142,6 +165,7 @@ const domainMapping = new gcp.cloudrun.DomainMapping(
 
 export const repositoryUrl = pulumi.interpolate`${region}-docker.pkg.dev/${project}/${repositoryId}`;
 export const imageUrl = image.imageName;
+export const imageDigest = image.repoDigest;
 export const serviceUrl = service.uri;
 export const customDomainUrl = pulumi.interpolate`https://${customDomain}`;
 export const dnsRecords = domainMapping.statuses.apply((statuses) =>
