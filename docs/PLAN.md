@@ -12,9 +12,13 @@ Portfolio and skill-building repo: a containerized resume app on **GCP**, provis
 
 ```mermaid
 flowchart LR
-  subgraph repo [This repo]
+  subgraph inlet [GitHub — inlet]
     App[Resume app + Dockerfile]
     Pulumi[Pulumi TypeScript]
+    Mirror[Mirror to GitLab Action]
+  end
+
+  subgraph gitlab [GitLab — production forge]
     CI[GitLab CI + WIF]
   end
 
@@ -28,6 +32,7 @@ flowchart LR
     DNS[resume.solla.app]
   end
 
+  Mirror --> CI
   CI --> Pulumi
   Pulumi --> AR
   Pulumi --> CR
@@ -36,6 +41,8 @@ flowchart LR
   AR --> CR
   DNS --> CR
 ```
+
+Forge roles, secret placement, and the Cloud Agent loop: [FORGES.md](FORGES.md).
 
 ---
 
@@ -47,8 +54,11 @@ pulumi-cloud-solla-resume/
 ├── infra/                  # Pulumi TypeScript program (GCP Cloud Run + WIF)
 ├── docs/
 │   ├── PLAN.md             # This file
+│   ├── FORGES.md           # GitHub inlet + GitLab production forge
 │   └── CUSTOM-DOMAIN.md    # resume.solla.app DNS / mapping notes
-├── .gitlab-ci.yml          # preview on MRs, deploy on main (keyless WIF)
+├── .github/workflows/
+│   └── mirror-to-gitlab.yml
+├── .gitlab-ci.yml          # preview on feature branches, deploy on main (keyless WIF)
 └── README.md
 ```
 
@@ -62,6 +72,7 @@ pulumi-cloud-solla-resume/
 | Pulumi stack: Artifact Registry, Cloud Run v2, domain mapping | Live |
 | Custom domain `resume.solla.app` | Live |
 | GitLab CI `pulumi preview` / `pulumi up` via GCP Workload Identity Federation | Live (keyless; no SA JSON keys) |
+| GitHub as commit inlet; Actions mirror to GitLab | Added — set `GITLAB_TOKEN` to activate (see [FORGES.md](FORGES.md)) |
 
 ### Pulumi resources (Cloud Run stack)
 
@@ -126,7 +137,8 @@ GKE free tier covers **one Autopilot/zonal control plane**, not Pod compute. Che
 
 - [ ] Kubernetes section on `resume.solla.app` (architecture, “offline by default”)
 - [ ] GitLab pipeline badge / link so visitors can see the WIF deploy workflow
-- [ ] Optional later: GitHub Actions as a second CI story (not a replacement for GitLab WIF)
+- [x] GitHub Actions **mirror** to GitLab (inlet only — not a second `pulumi up`)
+- [ ] Optional later: thin GitHub Actions lint/test (still not a replacement for GitLab WIF)
 
 ### 4. Optional later (not scheduled)
 
@@ -146,5 +158,6 @@ GKE free tier covers **one Autopilot/zonal control plane**, not Pod compute. Che
 - `Pulumi.yaml` and `Pulumi.dev.yaml` **are** committed. They hold no secrets today; Pulumi encrypts `--secret` values as `secure:` blocks. CI needs them checked out for `gcp:project`.
 - The public site allows **unauthenticated** access on purpose for a resume demo.
 - Prefer Application Default Credentials locally; no downloaded SA keys.
-- GitLab CI authenticates keyless via WIF (`infra/gitlab-wif.ts`, `.gitlab-ci.yml`). `PULUMI_ACCESS_TOKEN` is the only pipeline secret (masked GitLab CI/CD variable).
+- GitLab CI authenticates keyless via WIF (`infra/gitlab-wif.ts`, `.gitlab-ci.yml`). `PULUMI_ACCESS_TOKEN` is the only pipeline secret (masked GitLab CI/CD variable). Keep it on GitLab; never add it to GitHub Actions.
+- The GitHub → GitLab mirror uses a GitLab PAT stored as `GITLAB_TOKEN` (`write_repository` only). See [FORGES.md](FORGES.md).
 - IAM grants for the deployer SA that change **project IAM** must be applied once with a privileged local identity; CI cannot grant itself new project roles.

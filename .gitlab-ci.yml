@@ -5,6 +5,10 @@
 # GitLab: each job exchanges a short-lived GitLab OIDC token for GCP access by
 # impersonating the `gitlab-ci-deployer` service account.
 #
+# GitHub is the inlet (humans + Cursor Cloud Agents). A GitHub Action
+# mirrors refs here; this file remains the only production deploy path.
+# See docs/FORGES.md.
+#
 # Required GitLab CI/CD variables (Settings > CI/CD > Variables):
 #   PULUMI_ACCESS_TOKEN  - masked + protected. The only real secret here;
 #                          Pulumi state lives in Pulumi Cloud, not GCP.
@@ -87,8 +91,14 @@ stages:
 pulumi:preview:
   extends: .gcp_wif_auth
   stage: preview
+  interruptible: true
   rules:
+    # Native GitLab merge requests (optional review UI).
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    # GitHub-mirrored feature branches arrive as a normal `push`, not an
+    # MR event. Skip when a GitLab MR is already open for this branch so
+    # we do not run preview twice.
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CI_OPEN_MERGE_REQUESTS == null'
   script:
     - pulumi preview --stack "${PULUMI_STACK}"
 
@@ -96,6 +106,6 @@ pulumi:deploy:
   extends: .gcp_wif_auth
   stage: deploy
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"'
   script:
     - pulumi up --yes --stack "${PULUMI_STACK}"

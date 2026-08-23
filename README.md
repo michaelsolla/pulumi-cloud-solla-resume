@@ -4,11 +4,15 @@ Portfolio resume site on **Google Cloud Run**, managed with [Pulumi](https://www
 
 Kubernetes (local first, then cheap GKE Autopilot) is the next expansion. This repo stays **Pulumi-first** and **GCP-first**. See [docs/PLAN.md](docs/PLAN.md).
 
+**Check in on GitHub.** A GitHub Action mirrors refs to GitLab, which remains the production CI (WIF → Pulumi → Cloud Run). Do not add a second deploy on GitHub. Setup and diagrams: [docs/FORGES.md](docs/FORGES.md).
+
 ## Status
 
 **Live:** containerized resume on Cloud Run + custom domain, GitLab CI deploying via GCP Workload Identity Federation (keyless).
 
-**Next:** hygiene (digest-pinned Cloud Run deploys + Artifact Registry cleanup), then local Kubernetes with Pulumi.
+**Inlet:** GitHub is the source of truth for commits (humans and Cursor Cloud Agents). GitLab is the deploy forge.
+
+**Next:** finish the one-time `GITLAB_TOKEN` secret in [docs/FORGES.md](docs/FORGES.md), then hygiene (digest-pinned Cloud Run deploys + Artifact Registry cleanup), then local Kubernetes with Pulumi.
 
 ## Prerequisites
 
@@ -45,8 +49,12 @@ See [`.env.example`](.env.example) for local placeholders — **never commit rea
 ├── app/                # Resume container (Dockerfile + server.js)
 ├── infra/              # Pulumi TypeScript program
 ├── docs/
-│   └── PLAN.md         # Architecture and roadmap
-├── .gitlab-ci.yml      # preview on MRs, deploy on main
+│   ├── PLAN.md         # Architecture and roadmap
+│   ├── FORGES.md       # GitHub inlet + GitLab production forge
+│   └── CUSTOM-DOMAIN.md
+├── .github/workflows/
+│   └── mirror-to-gitlab.yml
+├── .gitlab-ci.yml      # preview on feature branches, deploy on main
 ├── README.md
 └── .env.example
 ```
