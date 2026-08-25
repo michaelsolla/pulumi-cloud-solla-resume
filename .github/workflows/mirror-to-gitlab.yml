@@ -1,0 +1,136 @@
+# Mirror this GitHub repository to GitLab.
+#
+# GitHub is the inlet (humans, Cursor Cloud Agents, PRs).
+# GitLab is the production forge (WIF + pulumi preview/up). This workflow
+# is not a deploy pipeline and must never grow a second `pulumi up`.
+#
+# One-time setup: create a GitLab personal access token with
+# `write_repository` and store it as the `GITLAB_TOKEN` Actions secret.
+# Full checklist: docs/FORGES.md
+
+name: Mirror to GitLab
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "**"
+  delete:
+  workflow_dispatch:
+    inputs:
+      full_mirror:
+        description: Push every GitHub branch and tag to GitLab (bootstrap / repair)
+        type: boolean
+        default: false
+
+concurrency:
+  group: mirror-gitlab-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  GITLAB_HOST: ${{ vars.GITLAB_HOST || 'gitlab.com' }}
+  GITLAB_PROJECT_PATH: ${{ vars.GITLAB_PROJECT_PATH || 'michael.solla/pulumi-cloud-solla-resume' }}
+  GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+  # Fail instead of prompting when git HTTP auth is missing.
+  GIT_TERMINAL_PROMPT: "0"
+
+jobs:
+  mirror-push:
+    name: Push ref to GitLab
+    if: github.event_name != 'delete'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out full history
+        # v5+ runs on Node 24 (v4 is the Node 20 deprecation warning).
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Mirror the triggering ref (or every ref)
+        env:
+          FULL_MIRROR: ${{ github.event_name == 'workflow_dispatch' && inputs.full_mirror }}
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${GITLAB_TOKEN:-}" ]]; then
+            echo "::error title=Missing GITLAB_TOKEN::Add a GitLab personal access token with write_repository as the GITLAB_TOKEN Actions secret. See docs/FORGES.md."
+            exit 1
+          fi
+
+          git remote add gitlab "https://${GITLAB_HOST}/${GITLAB_PROJECT_PATH}.git"
+
+          # GitLab git-over-HTTP uses Basic auth (username oauth2, password
+          # = PAT). PRIVATE-TOKEN is the REST API header and is ignored here,
+          # which produced: "could not read Username for 'https://gitlab.com'".
+          gitlab_basic="$(printf 'oauth2:%s' "${GITLAB_TOKEN}" | openssl base64 -A)"
+          push_gitlab() {
+            git -c "http.extraHeader=Authorization: Basic ${gitlab_basic}" push --force gitlab "$@"
+          }
+
+          if [[ "${FULL_MIRROR}" == "true" ]]; then
+            echo "Full mirror: every origin branch and tag -> GitLab"
+            # checkout already fetched every ref (fetch-depth: 0). Do not
+            # `git fetch origin` again: persist-credentials is false, so a
+            # second fetch would fail on a private GitHub repo.
+
+            refspecs=()
+            while IFS= read -r remote_ref; do
+              branch="${remote_ref#refs/remotes/origin/}"
+              refspecs+=("+${remote_ref}:refs/heads/${branch}")
+            done < <(git for-each-ref --format='%(refname)' refs/remotes/origin | grep -v '/HEAD$')
+
+            if [[ ${#refspecs[@]} -eq 0 ]]; then
+              echo "::error::No origin branches to mirror."
+              exit 1
+            fi
+
+            push_gitlab "${refspecs[@]}"
+            push_gitlab --tags
+          else
+            echo "Incremental mirror: HEAD -> ${GITHUB_REF}"
+            push_gitlab "HEAD:${GITHUB_REF}"
+          fi
+
+  mirror-delete:
+    name: Delete ref on GitLab
+    if: github.event_name == 'delete'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Delete the matching GitLab branch or tag
+        env:
+          REF_NAME: ${{ github.event.ref }}
+          REF_TYPE: ${{ github.event.ref_type }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${GITLAB_TOKEN:-}" ]]; then
+            echo "::error title=Missing GITLAB_TOKEN::Add a GitLab personal access token with write_repository as the GITLAB_TOKEN Actions secret. See docs/FORGES.md."
+            exit 1
+          fi
+
+          if [[ "${REF_NAME}" == "main" ]]; then
+            echo "::error::Refusing to delete main on GitLab."
+            exit 1
+          fi
+
+          if [[ "${REF_TYPE}" == "branch" ]]; then
+            target="refs/heads/${REF_NAME}"
+          elif [[ "${REF_TYPE}" == "tag" ]]; then
+            target="refs/tags/${REF_NAME}"
+          else
+            echo "::error::Unknown ref type: ${REF_TYPE}"
+            exit 1
+          fi
+
+          git init --quiet
+          git remote add gitlab "https://${GITLAB_HOST}/${GITLAB_PROJECT_PATH}.git"
+          gitlab_basic="$(printf 'oauth2:%s' "${GITLAB_TOKEN}" | openssl base64 -A)"
+          git -c "http.extraHeader=Authorization: Basic ${gitlab_basic}" push gitlab --delete "${target}"
