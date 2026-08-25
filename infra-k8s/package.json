@@ -1,0 +1,18 @@
+{
+  "name": "pulumi-cloud-solla-resume-k8s-local",
+  "main": "index.ts",
+  "private": true,
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@pulumi/command": "^1.1.0",
+    "@pulumi/docker": "^4.6.0",
+    "@pulumi/kubernetes": "^4.23.0",
+    "@pulumi/pulumi": "^3.160.0"
+  }
+}

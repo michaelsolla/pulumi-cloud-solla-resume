@@ -52,8 +52,13 @@ Forge roles, secret placement, and the Cloud Agent loop: [FORGES.md](FORGES.md).
 pulumi-cloud-solla-resume/
 ├── app/                    # Resume container (Dockerfile + server.js + PDF)
 ├── infra/                  # Pulumi TypeScript program (GCP Cloud Run + WIF)
+├── infra-k8s/              # Pulumi program for local kind (not GitLab CI)
+├── scripts/
+│   ├── k8s-up.sh
+│   └── k8s-down.sh
 ├── docs/
 │   ├── PLAN.md             # This file
+│   ├── K8S-LOCAL.md        # Local kind + Pulumi
 │   ├── FORGES.md           # GitHub inlet + GitLab production forge
 │   └── CUSTOM-DOMAIN.md    # resume.solla.app DNS / mapping notes
 ├── .github/workflows/
@@ -107,21 +112,19 @@ Cloud Run scale-to-zero + the default `*.run.app` URL is cheap. Artifact Registr
 
 Order matters. Do not skip ahead to GKE until local Kubernetes is boring.
 
-### 0. Hygiene (current)
+### 0. Hygiene
 
-- [ ] Pin Cloud Run to `image.repoDigest` so CI/local `pulumi up` actually deploys the new image
-- [ ] Artifact Registry cleanup policies: keep the last few images, delete stale untagged ones
+- [x] Pin Cloud Run to `image.repoDigest` so CI/local `pulumi up` actually deploys the new image
+- [x] Artifact Registry cleanup policies: keep the last few images, delete stale untagged ones
 
 ### 1. Local Kubernetes (Pulumi)
 
-Same `app/` container, on this laptop. No GKE yet. No Terraform.
+Same `app/` container, on this laptop. No GKE yet. No Terraform. See [K8S-LOCAL.md](K8S-LOCAL.md).
 
-- [ ] Local cluster via **kind** (or Docker Desktop Kubernetes)
-- [ ] Pulumi Kubernetes provider targeting the local kubecontext (same language as the Cloud Run stack)
-- [ ] Deploy the existing image as a Deployment + Service
-- [ ] Document `kind create` / `pulumi up` / `kubectl port-forward` so it is reproducible
-
-Plain YAML is fine as a scratch pad; the durable version is Pulumi so the K8s story matches the rest of the repo and the day job.
+- [x] Local cluster via **kind**
+- [x] Pulumi Kubernetes provider targeting `kind-solla-resume`
+- [x] Deploy the existing image as a Deployment + Service
+- [x] Document `kind create` / `pulumi up` / `kubectl port-forward` (`scripts/k8s-up.sh`, `scripts/k8s-down.sh`)
 
 ### 2. Cheap GKE Autopilot (on-demand)
 
