@@ -205,7 +205,8 @@ A later, thin GitHub Actions **lint/test** workflow is fine. A second Cloud Run 
 | Symptom | Likely cause |
 |---|---|
 | Mirror job: Missing `GITLAB_TOKEN` | Secret not created, or created on the wrong GitHub repo / environment. |
-| `HTTP 401` / `403` from GitLab | Token expired, wrong scope, or the user cannot write that project. |
+| `could not read Username for 'https://gitlab.com'` | Git talked to GitLab git HTTP without Basic auth. The workflow now sends `Authorization: Basic` with username `oauth2` and the PAT. Re-run on a commit that includes that fix. |
+| `HTTP 401` / `403` from GitLab | Token expired, wrong scope (`write_repository` required), or the user cannot write that project. |
 | `HTTP 404` from GitLab | Project path is wrong, or the project is private and the token cannot see it. |
 | GitLab preview never runs | Branch did not land on GitLab, or the job rules still think this is `main`. |
 | GitLab deploy after a feature push | That push updated `main`. Feature branches must not be named `main`. |

@@ -35,6 +35,8 @@ env:
   GITLAB_HOST: ${{ vars.GITLAB_HOST || 'gitlab.com' }}
   GITLAB_PROJECT_PATH: ${{ vars.GITLAB_PROJECT_PATH || 'michael.solla/pulumi-cloud-solla-resume' }}
   GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+  # Fail instead of prompting when git HTTP auth is missing.
+  GIT_TERMINAL_PROMPT: "0"
 
 jobs:
   mirror-push:
@@ -63,11 +65,12 @@ jobs:
 
           git remote add gitlab "https://${GITLAB_HOST}/${GITLAB_PROJECT_PATH}.git"
 
+          # GitLab git-over-HTTP uses Basic auth (username oauth2, password
+          # = PAT). PRIVATE-TOKEN is the REST API header and is ignored here,
+          # which produced: "could not read Username for 'https://gitlab.com'".
+          gitlab_basic="$(printf 'oauth2:%s' "${GITLAB_TOKEN}" | openssl base64 -A)"
           push_gitlab() {
-            # PRIVATE-TOKEN keeps the PAT out of the remote URL (and git's
-            # "pushing to https://..." log line). GitHub already masks the
-            # secret if it appears in logs.
-            git -c "http.extraHeader=PRIVATE-TOKEN: ${GITLAB_TOKEN}" push --force gitlab "$@"
+            git -c "http.extraHeader=Authorization: Basic ${gitlab_basic}" push --force gitlab "$@"
           }
 
           if [[ "${FULL_MIRROR}" == "true" ]]; then
@@ -128,4 +131,5 @@ jobs:
 
           git init --quiet
           git remote add gitlab "https://${GITLAB_HOST}/${GITLAB_PROJECT_PATH}.git"
-          git -c "http.extraHeader=PRIVATE-TOKEN: ${GITLAB_TOKEN}" push gitlab --delete "${target}"
+          gitlab_basic="$(printf 'oauth2:%s' "${GITLAB_TOKEN}" | openssl base64 -A)"
+          git -c "http.extraHeader=Authorization: Basic ${gitlab_basic}" push gitlab --delete "${target}"
