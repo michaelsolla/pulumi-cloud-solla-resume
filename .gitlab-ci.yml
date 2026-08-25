@@ -10,7 +10,9 @@
 # See docs/FORGES.md.
 #
 # Required GitLab CI/CD variables (Settings > CI/CD > Variables):
-#   PULUMI_ACCESS_TOKEN  - masked + protected. The only real secret here;
+#   PULUMI_ACCESS_TOKEN  - masked. Do NOT mark it Protected: GitLab withholds
+#                          protected variables from unprotected feature
+#                          branches, so `pulumi:preview` cannot log in.
 #                          Pulumi state lives in Pulumi Cloud, not GCP.
 #
 # GCP_WORKLOAD_IDENTITY_PROVIDER and GCP_SERVICE_ACCOUNT below come straight
@@ -85,6 +87,13 @@ stages:
     #    gcloud is authenticated as the deployer SA (mirrors the one-time
     #    local setup step in the README).
     - gcloud auth configure-docker "${GCP_ARTIFACT_REGISTRY_HOST}" --quiet
+    # Protected GitLab variables are empty on unprotected branches. Fail
+    # with that cause instead of Pulumi's non-interactive login error.
+    - |
+      if [ -z "${PULUMI_ACCESS_TOKEN:-}" ]; then
+        echo "PULUMI_ACCESS_TOKEN is empty. In GitLab: Settings > CI/CD > Variables > PULUMI_ACCESS_TOKEN: keep Masked, uncheck Protected. See docs/FORGES.md."
+        exit 1
+      fi
     - pulumi login
     - pulumi stack select "${PULUMI_STACK}"
 

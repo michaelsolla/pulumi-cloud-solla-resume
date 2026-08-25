@@ -86,7 +86,7 @@ flowchart TB
   end
 
   subgraph gitlabSecrets [GitLab — CI/CD variables]
-    Pulumi["PULUMI_ACCESS_TOKEN<br/>masked + protected"]
+    Pulumi["PULUMI_ACCESS_TOKEN<br/>masked, not Protected"]
   end
 
   subgraph never [Never store on GitHub]
@@ -104,7 +104,7 @@ flowchart TB
 | Source of truth for commits | Yes | Mirror |
 | Cursor Cloud Agents | Yes | Not on Free |
 | `pulumi preview` / `pulumi up` | No | Yes |
-| `PULUMI_ACCESS_TOKEN` | No | Yes |
+| `PULUMI_ACCESS_TOKEN` | No | Yes (masked, **not** Protected) |
 | `GITLAB_TOKEN` (repo write) | Yes | No |
 | WIF trust (`project_path`) | No | Yes — pinned to this GitLab project |
 
@@ -155,6 +155,19 @@ After `GITLAB_TOKEN` is set:
 4. Confirm a GitLab pipeline ran on `main` only if you intended to deploy. Feature-branch pipelines should be `pulumi preview` only.
 
 Later pushes mirror just the ref that changed. Branch or tag deletes on GitHub delete the same ref on GitLab. The workflow **refuses to delete `main`**.
+
+### 5. Let feature-branch preview see the Pulumi token
+
+GitLab **Protected** variables are injected only on protected branches (usually `main`). Agent branches are not protected, so a Protected `PULUMI_ACCESS_TOKEN` makes `pulumi:preview` fail at `pulumi login`.
+
+1. GitLab project → **Settings → CI/CD → Variables** → `PULUMI_ACCESS_TOKEN`.
+2. Keep **Masked**.
+3. Uncheck **Protected**.
+4. Retry the failed `pulumi:preview` job (or push again).
+
+On this personal repo that is acceptable: only you (and the GitHub mirror token) can push branches. A job-like setup would use a second, non-protected preview token instead of unprotecting the deploy token.
+
+The `docker` PATH warning from `gcloud auth configure-docker` is noise. The job already has Docker via the `docker:dind` service; Pulumi talks to `DOCKER_HOST`.
 
 ---
 
@@ -208,7 +221,7 @@ A later, thin GitHub Actions **lint/test** workflow is fine. A second Cloud Run 
 | `could not read Username for 'https://gitlab.com'` | Git talked to GitLab git HTTP without Basic auth. The workflow now sends `Authorization: Basic` with username `oauth2` and the PAT. Re-run on a commit that includes that fix. |
 | `HTTP 401` / `403` from GitLab | Token expired, wrong scope (`write_repository` required), or the user cannot write that project. |
 | `HTTP 404` from GitLab | Project path is wrong, or the project is private and the token cannot see it. |
-| GitLab preview never runs | Branch did not land on GitLab, or the job rules still think this is `main`. |
+| `PULUMI_ACCESS_TOKEN must be set` / empty token on `pulumi:preview` | GitLab variable is **Protected**. Uncheck Protected, keep Masked, retry the job. |
 | GitLab deploy after a feature push | That push updated `main`. Feature branches must not be named `main`. |
 | WIF / `attribute.project_path` errors | GitLab project path no longer matches `infra/gitlab-wif.ts`. |
 | Histories diverge | Someone pushed to GitLab only. Re-run the workflow with **full mirror**. |
