@@ -158,6 +158,6 @@ GKE free tier covers **one Autopilot/zonal control plane**, not Pod compute. Che
 - `Pulumi.yaml` and `Pulumi.dev.yaml` **are** committed. They hold no secrets today; Pulumi encrypts `--secret` values as `secure:` blocks. CI needs them checked out for `gcp:project`.
 - The public site allows **unauthenticated** access on purpose for a resume demo.
 - Prefer Application Default Credentials locally; no downloaded SA keys.
-- GitLab CI authenticates keyless via WIF (`infra/gitlab-wif.ts`, `.gitlab-ci.yml`). `PULUMI_ACCESS_TOKEN` is the only pipeline secret (masked GitLab CI/CD variable). Keep it on GitLab; never add it to GitHub Actions.
+- GitLab CI authenticates keyless via WIF (`infra/gitlab-wif.ts`, `.gitlab-ci.yml`). `PULUMI_ACCESS_TOKEN` is the only pipeline secret (masked GitLab CI/CD variable, **not** Protected, so feature-branch preview can log in). Keep it on GitLab; never add it to GitHub Actions.
 - The GitHub → GitLab mirror uses a GitLab PAT stored as `GITLAB_TOKEN` (`write_repository` only). See [FORGES.md](FORGES.md).
 - IAM grants for the deployer SA that change **project IAM** must be applied once with a privileged local identity; CI cannot grant itself new project roles.
