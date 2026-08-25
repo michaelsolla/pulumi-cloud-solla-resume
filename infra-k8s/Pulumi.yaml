@@ -1,0 +1,6 @@
+name: pulumi-k8s-local
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+description: Same resume container on a local kind cluster, managed with Pulumi
