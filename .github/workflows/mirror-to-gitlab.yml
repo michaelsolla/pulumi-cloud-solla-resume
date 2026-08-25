@@ -46,7 +46,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out full history
-        uses: actions/checkout@v4
+        # v5+ runs on Node 24 (v4 is the Node 20 deprecation warning).
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           persist-credentials: false
