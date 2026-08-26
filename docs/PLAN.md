@@ -138,7 +138,7 @@ There is now a cloud K8s story to point at, even if that cluster is usually dest
 ### 4. Optional later
 
 - Helm once a plain Deployment is solid
-- GitHub Actions `workflow_dispatch` for GKE up/down (after Autopilot works locally)
+- GitHub Actions `workflow_dispatch` for GKE up/down
 - Terraform sidecar **only** if a job hunt needs that signal
 
 ### Explicitly out of scope
