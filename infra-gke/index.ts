@@ -7,6 +7,7 @@ const config = new pulumi.Config();
 const project = gcpConfig.require("project");
 const region = gcpConfig.get("region") || "us-central1";
 const clusterName = config.get("clusterName") || "solla-resume-autopilot";
+const releaseChannel = config.get("releaseChannel") || "REGULAR";
 const cloudRunStack =
   config.get("cloudRunStack") || "michael-solla-gmail-com/pulumi-gcp-ed/dev";
 
@@ -31,6 +32,28 @@ const enabledApis = [
     }),
 );
 
+// REGULAR's *default* version is what GKE uses if minMasterVersion is unset,
+// and it lags the newest version already offered in that channel (the console
+// "upgrade available" banner). Look up the latest in-channel version so a
+// freshly created lab is current. Subsequent auto-upgrades still follow the
+// channel. Override with `pulumi config set releaseChannel RAPID` if you want
+// the faster stream.
+const engineVersions = gcp.container.getEngineVersionsOutput(
+  { location: region, project },
+  { dependsOn: enabledApis },
+);
+const minMasterVersion = engineVersions.releaseChannelLatestVersion.apply(
+  (versions) => {
+    const latest = versions[releaseChannel];
+    if (!latest) {
+      throw new Error(
+        `No latest GKE version for release channel ${releaseChannel} in ${region}`,
+      );
+    }
+    return latest;
+  },
+);
+
 // Regional Autopilot: control-plane fee is covered by the GKE monthly credit
 // for one Autopilot cluster. Pods still bill. deletionProtection is off so
 // `pulumi destroy` can actually tear it down after a demo.
@@ -41,7 +64,8 @@ const cluster = new gcp.container.Cluster(
     location: region,
     enableAutopilot: true,
     deletionProtection: false,
-    releaseChannel: { channel: "REGULAR" },
+    releaseChannel: { channel: releaseChannel },
+    minMasterVersion,
     description: "On-demand resume lab. Destroy when idle. No public load balancer.",
   },
   { dependsOn: enabledApis },
@@ -144,6 +168,9 @@ new k8s.core.v1.Service(
 
 export const gkeClusterName = cluster.name;
 export const gkeLocation = cluster.location;
+export const gkeReleaseChannel = releaseChannel;
+export const gkeMinMasterVersion = minMasterVersion;
+export const gkeMasterVersion = cluster.masterVersion;
 export const kubeContext = pulumi.interpolate`gke_${project}_${cluster.location}_${cluster.name}`;
 export const imageRef = image;
 export const portForward = pulumi.interpolate`kubectl --context gke_${project}_${cluster.location}_${cluster.name} -n solla-resume port-forward svc/solla-resume 8080:8080`;

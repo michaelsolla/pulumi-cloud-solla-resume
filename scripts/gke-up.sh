@@ -9,6 +9,17 @@ if ! command -v gcloud >/dev/null 2>&1; then
   exit 1
 fi
 
+# Homebrew's gcloud-cli cask only links gcloud/gsutil/bq into PATH. The GKE
+# auth plugin lives in the SDK bin dir after `gcloud components install`.
+SDK_ROOT="$(gcloud info --format='value(installation.sdk_root)')"
+export PATH="${SDK_ROOT}/bin:${PATH}"
+if ! command -v gke-gcloud-auth-plugin >/dev/null 2>&1; then
+  echo "gke-gcloud-auth-plugin is required (kubectl/Pulumi auth to GKE)." >&2
+  echo "Install: gcloud components install gke-gcloud-auth-plugin" >&2
+  exit 1
+fi
+export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
 cd "${ROOT}/infra-gke"
 if [[ ! -d node_modules ]]; then
   npm install
@@ -32,3 +43,5 @@ echo "Then:"
 pulumi stack output portForward
 echo "Open http://localhost:8080"
 echo "GCP console analog: Kubernetes Engine → Workloads"
+echo "Headlamp on macOS: launch the app binary from this shell (GUI PATH cannot find gke-gcloud-auth-plugin):"
+echo "  /Applications/Headlamp.app/Contents/MacOS/Headlamp"

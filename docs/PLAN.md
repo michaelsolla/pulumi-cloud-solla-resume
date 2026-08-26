@@ -1,6 +1,6 @@
 # Solla resume site — project plan
 
-Portfolio and skill-building repo: a containerized resume app on **GCP**, provisioned with **Pulumi TypeScript**. Cloud Run is the always-on public site. Local **kind** is done. Next skill/resume signal is **on-demand GKE Autopilot**. Terraform is an optional later appendix — this repo stays Pulumi-first.
+Portfolio and skill-building repo: a containerized resume app on **GCP**, provisioned with **Pulumi TypeScript**. Cloud Run is the always-on public site. Local **kind** is done. On-demand **GKE Autopilot** is proven (destroy when idle). Next is showing that Kubernetes story on the site. Terraform is an optional later appendix — this repo stays Pulumi-first.
 
 **GCP project:** `pulumi-gcp-ed-msolla`  
 **Region:** `us-central1`  
@@ -92,14 +92,14 @@ pulumi-cloud-solla-resume/
 | GitLab CI `preview` / `up` via WIF (keyless) | Live |
 | GitHub inlet; Actions mirror to GitLab | Live |
 | Local kind + Pulumi (`infra-k8s`), k9s + Headlamp for inspect | Laptop (not public) |
+| GKE Autopilot lab (`infra-gke/`, stack `lab`) | On-demand (destroy when idle; not in GitLab CI) |
 
-### Inspect tools (local cluster)
+### Inspect tools
 
 - **k9s** — terminal UI. Name is K8s + s (“Kubernetes screens”), not an acronym.
-- **Headlamp** — desktop console; closest local analog to EKS / GKE Workloads.
-- **kubectl port-forward** — http://localhost:8080 for the app itself.
-
-On GKE later, use **GCP → Kubernetes Engine → Workloads** plus the same k9s/Headlamp after `get-credentials`.
+- **Headlamp** — desktop console; closest local analog to EKS / GKE Workloads. For GKE on macOS, launch Headlamp from a shell that has `gke-gcloud-auth-plugin` on `PATH` ([GKE.md](GKE.md)); Spotlight/`open -a` often cannot auth.
+- **kubectl port-forward** — http://localhost:8080 for the app itself (kind or GKE).
+- **GCP → Kubernetes Engine → Workloads** — cloud inspect for Autopilot (no public GKE URL).
 
 ---
 
@@ -115,24 +115,25 @@ On GKE later, use **GCP → Kubernetes Engine → Workloads** plus the same k9s/
 - [x] kind cluster + Pulumi Deployment/Service
 - [x] Scripts + [K8S-LOCAL.md](K8S-LOCAL.md) (mermaid, k9s, Headlamp)
 
-### 2. Cheap GKE Autopilot (on-demand) — current
+### 2. Cheap GKE Autopilot (on-demand)
 
-- [ ] Separate Pulumi project (`infra-gke/`, stack `lab`) — **code in progress; not applied until you approve cost**
-- [ ] Tiny Autopilot workload; **no** HTTP(S) load balancer
-- [ ] `scripts/gke-up.sh` / `gke-down.sh`
-- [ ] Tear down when idle
-- [ ] Cloud Run stays the public hub
+- [x] Separate Pulumi project (`infra-gke/`, stack `lab`)
+- [x] Tiny Autopilot workload; **no** HTTP(S) load balancer; create on the **latest** `REGULAR` channel version
+- [x] `scripts/gke-up.sh` / `gke-down.sh` (auth plugin + Homebrew SDK `PATH`)
+- [x] First apply verified: console Workloads 1/1 + port-forward http://localhost:8080
+- [ ] Tear down when idle (`./scripts/gke-down.sh`) — Pods still bill while the cluster is up
+- [x] Cloud Run stays the public hub
 
 GKE free tier = one Autopilot **control plane** credit, not free Pods. No always-on public GKE URL.
 
-### 3. Show the work on the site (after GKE can exist)
+### 3. Show the work on the site (current)
 
 - [ ] Kubernetes section on `resume.solla.app` (architecture, “lab offline by default”)
 - [ ] GitLab pipeline badge / link (WIF deploy)
 - [x] GitHub → GitLab mirror
 - [ ] Optional: thin GitHub Actions lint/test (not a second deploy)
 
-Do not redesign the homepage until there is a cloud K8s story to point at — even if that cluster is usually destroyed.
+There is now a cloud K8s story to point at, even if that cluster is usually destroyed.
 
 ### 4. Optional later
 

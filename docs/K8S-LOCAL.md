@@ -92,4 +92,4 @@ Tear down the workload **and** delete the kind cluster:
 2. `kind load docker-image` so the node can run it (`imagePullPolicy: Never`).
 3. Creates namespace `solla-resume`, a Deployment (1 replica), and a ClusterIP Service on port 8080.
 
-GKE Autopilot comes later; this stack is laptop-only on purpose.
+GKE Autopilot is a separate on-demand stack: [GKE.md](GKE.md). This stack stays laptop-only on purpose.
