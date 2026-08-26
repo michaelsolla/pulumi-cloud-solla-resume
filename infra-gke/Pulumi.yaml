@@ -1,0 +1,6 @@
+name: pulumi-gke-lab
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+description: On-demand GKE Autopilot lab for the resume app (not the always-on site)

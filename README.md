@@ -12,7 +12,7 @@ Kubernetes (local first, then cheap GKE Autopilot) is the next expansion. This r
 
 **Inlet:** GitHub is the source of truth for commits (humans and Cursor Cloud Agents). GitLab is the deploy forge.
 
-**Next:** cheap on-demand GKE Autopilot (after local Kubernetes is boring). See [docs/PLAN.md](docs/PLAN.md) and [docs/K8S-LOCAL.md](docs/K8S-LOCAL.md).
+**Next:** on-demand GKE Autopilot (`infra-gke/`, not applied until you run it). See [docs/PLAN.md](docs/PLAN.md), [docs/K8S-LOCAL.md](docs/K8S-LOCAL.md), [docs/GKE.md](docs/GKE.md).
 
 ## Prerequisites
 
@@ -49,12 +49,16 @@ See [`.env.example`](.env.example) for local placeholders — **never commit rea
 ├── app/                # Resume container (Dockerfile + server.js)
 ├── infra/              # Pulumi TypeScript (GCP Cloud Run)
 ├── infra-k8s/          # Pulumi TypeScript (local kind)
+├── infra-gke/          # Pulumi TypeScript (GKE Autopilot lab)
 ├── scripts/
 │   ├── k8s-up.sh
-│   └── k8s-down.sh
+│   ├── k8s-down.sh
+│   ├── gke-up.sh
+│   └── gke-down.sh
 ├── docs/
 │   ├── PLAN.md
 │   ├── K8S-LOCAL.md
+│   ├── GKE.md
 │   ├── FORGES.md
 │   └── CUSTOM-DOMAIN.md
 ├── .github/workflows/

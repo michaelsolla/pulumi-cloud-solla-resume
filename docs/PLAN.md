@@ -1,10 +1,12 @@
 # Solla resume site — project plan
 
-Portfolio and skill-building repo: a containerized resume app on **GCP**, provisioned with **Pulumi TypeScript**. Cloud Run is the always-on public site. Kubernetes (local first, then cheap GKE Autopilot) is the next skill and resume signal. Terraform is an optional later appendix, not the main path — this repo stays Pulumi-first.
+Portfolio and skill-building repo: a containerized resume app on **GCP**, provisioned with **Pulumi TypeScript**. Cloud Run is the always-on public site. Local **kind** is done. Next skill/resume signal is **on-demand GKE Autopilot**. Terraform is an optional later appendix — this repo stays Pulumi-first.
 
 **GCP project:** `pulumi-gcp-ed-msolla`  
 **Region:** `us-central1`  
 **Public URL:** [https://resume.solla.app](https://resume.solla.app)
+
+Check in on **GitHub**. GitLab is the production forge (mirror Action). See [FORGES.md](FORGES.md). Do not dual-push.
 
 ---
 
@@ -14,7 +16,9 @@ Portfolio and skill-building repo: a containerized resume app on **GCP**, provis
 flowchart LR
   subgraph inlet [GitHub — inlet]
     App[Resume app + Dockerfile]
-    Pulumi[Pulumi TypeScript]
+    PulumiCR[Pulumi Cloud Run]
+    PulumiKind[Pulumi kind]
+    PulumiGKE[Pulumi GKE lab]
     Mirror[Mirror to GitLab Action]
   end
 
@@ -22,10 +26,15 @@ flowchart LR
     CI[GitLab CI + WIF]
   end
 
+  subgraph laptop [Laptop]
+    Kind[kind cluster]
+  end
+
   subgraph gcp [GCP]
     AR[Artifact Registry]
     CR[Cloud Run]
     DM[Domain mapping]
+    GKE[GKE Autopilot — on demand]
   end
 
   subgraph dns [Cloudflare]
@@ -33,16 +42,20 @@ flowchart LR
   end
 
   Mirror --> CI
-  CI --> Pulumi
-  Pulumi --> AR
-  Pulumi --> CR
-  Pulumi --> DM
+  CI --> PulumiCR
+  PulumiCR --> AR
+  PulumiCR --> CR
+  PulumiCR --> DM
   App --> AR
   AR --> CR
   DNS --> CR
+  PulumiKind --> Kind
+  App --> Kind
+  PulumiGKE --> GKE
+  AR --> GKE
 ```
 
-Forge roles, secret placement, and the Cloud Agent loop: [FORGES.md](FORGES.md).
+Forge roles and secrets: [FORGES.md](FORGES.md). Local kind: [K8S-LOCAL.md](K8S-LOCAL.md). GKE lab: [GKE.md](GKE.md).
 
 ---
 
@@ -50,20 +63,21 @@ Forge roles, secret placement, and the Cloud Agent loop: [FORGES.md](FORGES.md).
 
 ```
 pulumi-cloud-solla-resume/
-├── app/                    # Resume container (Dockerfile + server.js + PDF)
-├── infra/                  # Pulumi TypeScript program (GCP Cloud Run + WIF)
-├── infra-k8s/              # Pulumi program for local kind (not GitLab CI)
+├── app/                    # Resume container
+├── infra/                  # Pulumi: GCP Cloud Run + WIF (GitLab CI)
+├── infra-k8s/              # Pulumi: local kind (not CI)
+├── infra-gke/              # Pulumi: on-demand Autopilot (not CI)
 ├── scripts/
-│   ├── k8s-up.sh
-│   └── k8s-down.sh
+│   ├── k8s-up.sh / k8s-down.sh
+│   └── gke-up.sh / gke-down.sh
 ├── docs/
-│   ├── PLAN.md             # This file
-│   ├── K8S-LOCAL.md        # Local kind + Pulumi
-│   ├── FORGES.md           # GitHub inlet + GitLab production forge
-│   └── CUSTOM-DOMAIN.md    # resume.solla.app DNS / mapping notes
-├── .github/workflows/
-│   └── mirror-to-gitlab.yml
-├── .gitlab-ci.yml          # preview on feature branches, deploy on main (keyless WIF)
+│   ├── PLAN.md
+│   ├── K8S-LOCAL.md
+│   ├── GKE.md
+│   ├── FORGES.md
+│   └── CUSTOM-DOMAIN.md
+├── .github/workflows/mirror-to-gitlab.yml
+├── .gitlab-ci.yml          # Cloud Run stack only
 └── README.md
 ```
 
@@ -73,94 +87,75 @@ pulumi-cloud-solla-resume/
 
 | Piece | Status |
 |--------|--------|
-| Dockerized Node app serving the resume PDF | Live |
-| Pulumi stack: Artifact Registry, Cloud Run v2, domain mapping | Live |
-| Custom domain `resume.solla.app` | Live |
-| GitLab CI `pulumi preview` / `pulumi up` via GCP Workload Identity Federation | Live (keyless; no SA JSON keys) |
-| GitHub as commit inlet; Actions mirror to GitLab | Added — set `GITLAB_TOKEN` to activate (see [FORGES.md](FORGES.md)) |
+| Resume container on Cloud Run + `resume.solla.app` | Live |
+| Artifact Registry + digest-pinned Cloud Run deploys + cleanup policies | Live |
+| GitLab CI `preview` / `up` via WIF (keyless) | Live |
+| GitHub inlet; Actions mirror to GitLab | Live |
+| Local kind + Pulumi (`infra-k8s`), k9s + Headlamp for inspect | Laptop (not public) |
 
-### Pulumi resources (Cloud Run stack)
+### Inspect tools (local cluster)
 
-- `gcp.projects.Service` — enable required APIs
-- `gcp.artifactregistry.Repository` — Docker image repository (+ cleanup policies)
-- `gcp.artifactregistry.RepositoryIamMember` — Cloud Run can pull images
-- `docker.Image` — build + push container
-- `gcp.cloudrunv2.Service` — run the container; scales to zero when idle
-- `gcp.cloudrunv2.ServiceIamMember` — unauthenticated HTTP (demo)
-- `gcp.cloudrun.DomainMapping` — `resume.solla.app`
-- `GitlabCiWif` component — pool, OIDC provider, deployer SA, least-privilege IAM
+- **k9s** — terminal UI. Name is K8s + s (“Kubernetes screens”), not an acronym.
+- **Headlamp** — desktop console; closest local analog to EKS / GKE Workloads.
+- **kubectl port-forward** — http://localhost:8080 for the app itself.
 
-### Image build strategy: `@pulumi/docker`
-
-During `pulumi up`, a `docker.Image` resource builds from `app/` (platform `linux/amd64`) and pushes to Artifact Registry. Cloud Run should reference **`image.repoDigest`** (immutable `@sha256:...`), not the floating `:latest` tag, so a new push actually rolls a new revision.
-
-**Local test:**
-
-```bash
-cd app
-docker build --platform linux/amd64 -t hello-world-local .
-docker run --rm -p 8080:8080 hello-world-local
-```
-
-### Cost (always-on site)
-
-Cloud Run scale-to-zero + the default `*.run.app` URL is cheap. Artifact Registry storage is the main slow leak unless cleanup policies keep only a few recent images.
+On GKE later, use **GCP → Kubernetes Engine → Workloads** plus the same k9s/Headlamp after `get-credentials`.
 
 ---
 
 ## Roadmap
 
-Order matters. Do not skip ahead to GKE until local Kubernetes is boring.
-
 ### 0. Hygiene
 
-- [x] Pin Cloud Run to `image.repoDigest` so CI/local `pulumi up` actually deploys the new image
-- [x] Artifact Registry cleanup policies: keep the last few images, delete stale untagged ones
+- [x] Pin Cloud Run to `image.repoDigest`
+- [x] Artifact Registry cleanup policies
 
 ### 1. Local Kubernetes (Pulumi)
 
-Same `app/` container, on this laptop. No GKE yet. No Terraform. See [K8S-LOCAL.md](K8S-LOCAL.md).
+- [x] kind cluster + Pulumi Deployment/Service
+- [x] Scripts + [K8S-LOCAL.md](K8S-LOCAL.md) (mermaid, k9s, Headlamp)
 
-- [x] Local cluster via **kind**
-- [x] Pulumi Kubernetes provider targeting `kind-solla-resume`
-- [x] Deploy the existing image as a Deployment + Service
-- [x] Document `kind create` / `pulumi up` / `kubectl port-forward` (`scripts/k8s-up.sh`, `scripts/k8s-down.sh`)
+### 2. Cheap GKE Autopilot (on-demand) — current
 
-### 2. Cheap GKE Autopilot (on-demand)
+- [ ] Separate Pulumi project (`infra-gke/`, stack `lab`) — **code in progress; not applied until you approve cost**
+- [ ] Tiny Autopilot workload; **no** HTTP(S) load balancer
+- [ ] `scripts/gke-up.sh` / `gke-down.sh`
+- [ ] Tear down when idle
+- [ ] Cloud Run stays the public hub
 
-- [ ] Separate Pulumi stack (or program) for zonal **GKE Autopilot**
-- [ ] Tiny workload; no always-on HTTP(S) load balancer at first
-- [ ] Explicit up / destroy workflow (scripts wrapping `pulumi up` / `pulumi destroy`)
-- [ ] Tear down when idle — GCP credits still do not make a forgotten cluster + LB free
-- [ ] Cloud Run stays the public hub; GKE is a lab, not a second 24/7 site
+GKE free tier = one Autopilot **control plane** credit, not free Pods. No always-on public GKE URL.
 
-GKE free tier covers **one Autopilot/zonal control plane**, not Pod compute. Cheapest honest pattern: destroy when not demoing.
+### 3. Show the work on the site (after GKE can exist)
 
-### 3. Show the work on the site
+- [ ] Kubernetes section on `resume.solla.app` (architecture, “lab offline by default”)
+- [ ] GitLab pipeline badge / link (WIF deploy)
+- [x] GitHub → GitLab mirror
+- [ ] Optional: thin GitHub Actions lint/test (not a second deploy)
 
-- [ ] Kubernetes section on `resume.solla.app` (architecture, “offline by default”)
-- [ ] GitLab pipeline badge / link so visitors can see the WIF deploy workflow
-- [x] GitHub Actions **mirror** to GitLab (inlet only — not a second `pulumi up`)
-- [ ] Optional later: thin GitHub Actions lint/test (still not a replacement for GitLab WIF)
+Do not redesign the homepage until there is a cloud K8s story to point at — even if that cluster is usually destroyed.
 
-### 4. Optional later (not scheduled)
+### 4. Optional later
 
-- Helm on the local/GKE workload once a plain Deployment is solid
-- GitHub Actions `workflow_dispatch` for GKE up/down (after local + Autopilot work)
-- A **Terraform sidecar folder** only if a specific job hunt needs that signal — not the default path for this repo
+- Helm once a plain Deployment is solid
+- GitHub Actions `workflow_dispatch` for GKE up/down (after Autopilot works locally)
+- Terraform sidecar **only** if a job hunt needs that signal
 
 ### Explicitly out of scope
 
-- **AWS in this repo.** The always-on site stays GCP. Day-job cloud is AWS; this project is for GCP + Pulumi + Kubernetes depth, not a second cloud copy of Cloud Run.
+- **AWS in this repo**
+- Dual-push to GitLab; GitLab MRs unless requested
+- Putting `pulumi up` for GKE on every GitLab `main` pipeline (would leave spend running)
+- Kubernetes Dashboard in-cluster for the laptop lab
 
 ---
 
 ## Security notes
 
-- Never commit `.env`, service account JSON, or files matching `*-credentials.json` / `service-account*.json`.
-- `Pulumi.yaml` and `Pulumi.dev.yaml` **are** committed. They hold no secrets today; Pulumi encrypts `--secret` values as `secure:` blocks. CI needs them checked out for `gcp:project`.
-- The public site allows **unauthenticated** access on purpose for a resume demo.
-- Prefer Application Default Credentials locally; no downloaded SA keys.
-- GitLab CI authenticates keyless via WIF (`infra/gitlab-wif.ts`, `.gitlab-ci.yml`). `PULUMI_ACCESS_TOKEN` is the only pipeline secret (masked GitLab CI/CD variable, **not** Protected, so feature-branch preview can log in). Keep it on GitLab; never add it to GitHub Actions.
-- The GitHub → GitLab mirror uses a GitLab PAT stored as `GITLAB_TOKEN` (`write_repository` only). See [FORGES.md](FORGES.md).
-- IAM grants for the deployer SA that change **project IAM** must be applied once with a privileged local identity; CI cannot grant itself new project roles.
+- Never commit `.env`, SA JSON, or `*-credentials.json` / `service-account*.json`.
+- `Pulumi.yaml` and allowlisted stack configs (`Pulumi.dev.yaml`, `Pulumi.local.yaml`, `Pulumi.lab.yaml`) **are** committed.
+- Public Cloud Run is unauthenticated on purpose.
+- ADC locally; no downloaded SA keys.
+- GitLab CI: WIF + `PULUMI_ACCESS_TOKEN` (masked, **not** Protected). Never put that token on GitHub.
+- `GITLAB_TOKEN` on GitHub is mirror-only (`write_repository`).
+- Project-IAM grants for `gitlab-ci-deployer` must be applied once with a privileged identity; CI cannot self-escalate.
+- GKE lab uses **your** local ADC when you run `gke-up.sh`, not the GitLab deployer SA (until we add that on purpose).
