@@ -13,7 +13,7 @@ const cloudRunStack =
 
 const appLabels = { app: "solla-resume" };
 
-// Same image Cloud Run just shipped (digest), unless you override with
+// Same image Cloud Run just shipped (digest), unless overridden with
 // `pulumi config set image ...`. Autopilot pulls from Artifact Registry;
 // the Cloud Run stack already grants artifactregistry.reader to the default
 // compute SA, which Autopilot uses for image pulls.
@@ -36,7 +36,7 @@ const enabledApis = [
 // and it lags the newest version already offered in that channel (the console
 // "upgrade available" banner). Look up the latest in-channel version so a
 // freshly created lab is current. Subsequent auto-upgrades still follow the
-// channel. Override with `pulumi config set releaseChannel RAPID` if you want
+// channel. Override with `pulumi config set releaseChannel RAPID` for
 // the faster stream.
 const engineVersions = gcp.container.getEngineVersionsOutput(
   { location: region, project },

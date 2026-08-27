@@ -172,32 +172,32 @@ const homePage = `<!DOCTYPE html>
       <div class="diagram">
         <pre class="mermaid">
 flowchart LR
-  GH[GitHub — you commit here] --> Copy[GitHub Action: copy git to GitLab]
+  GH[GitHub] --> Copy[GitHub Action copies git to GitLab]
   Copy --> GL[GitLab CI + WIF]
   GL --> CR[Cloud Run]
   CR --> DNS[resume.solla.app]
-  GH -.-> Kind[kind — laptop]
+  GH -.-> Kind[kind — local lab]
   GH -.-> GKE[GKE Autopilot — on demand]
         </pre>
       </div>
       <p class="caption">
-        Commits land on GitHub. A GitHub Action then copies the <em>same git branch</em> to GitLab
-        (workflow name: Mirror to GitLab). GitLab CI is what runs Pulumi against GCP. GitHub never deploys.
+        GitHub is the source of truth. A GitHub Action copies the <em>same git branch</em> to GitLab
+        (workflow name: Mirror to GitLab). GitLab CI runs Pulumi against GCP. GitHub Actions never deploys.
       </p>
     </div>
     <div class="copy">
       <h2>Why these trade-offs</h2>
       <ul>
         <li><strong>Pulumi, not Terraform.</strong> One TypeScript program for Cloud Run, kind, and Autopilot. This repo is Pulumi-first on purpose — not a second language for the same graph.</li>
-        <li><strong>Cloud Run is the public site.</strong> Always-on and cheap. GKE Autopilot is a lab you destroy: the control-plane credit does not cover Pods, and an HTTP(S) load balancer is a $15–20/mo trap. No public GKE URL.</li>
-        <li><strong>GitHub for commits, GitLab for deploy.</strong> Cursor Cloud Agents need GitHub, so that is where code is reviewed. A GitHub Action copies each branch to GitLab; GitLab shared runners plus GCP Workload Identity Federation run <code>pulumi up</code>. GitHub Actions never deploys.</li>
+        <li><strong>Cloud Run is the public site.</strong> Always-on and cheap. GKE Autopilot is an on-demand lab, destroyed when idle: the control-plane credit does not cover Pods, and an HTTP(S) load balancer is a $15–20/mo trap. No public GKE URL.</li>
+        <li><strong>GitHub for git, GitLab for deploy.</strong> Commits and pull requests live on GitHub. A GitHub Action copies each branch to GitLab; GitLab shared runners plus GCP Workload Identity Federation run <code>pulumi up</code>. GitHub Actions never deploys.</li>
       </ul>
       <h2>Security</h2>
       <p>
         GCP is keyless WIF — no service-account JSON in CI. Pulumi Cloud uses a GitLab
         <code>PULUMI_ACCESS_TOKEN</code> (masked, not Protected) so feature-branch
-        <code>preview</code> works. Fine for a solo personal repo. A team would use Pulumi OIDC/ESC
-        and protected branches. That token is not on GitHub.
+        <code>preview</code> can log in. That is acceptable on a solo personal repo; a team would
+        typically use Pulumi OIDC/ESC and protected branches. The token lives only on GitLab.
       </p>
     </div>
   </section>

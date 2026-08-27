@@ -1,8 +1,9 @@
 # Mirror this GitHub repository to GitLab.
 #
-# GitHub is the inlet (humans, Cursor Cloud Agents, PRs).
-# GitLab is the production forge (WIF + pulumi preview/up). This workflow
-# is not a deploy pipeline and must never grow a second `pulumi up`.
+# GitHub is the canonical repository (commits and pull requests).
+# GitLab is production CI (WIF + pulumi preview/up). This workflow
+# copies git only; it is not a deploy pipeline and must not grow a
+# second `pulumi up`.
 #
 # One-time setup: create a GitLab personal access token with
 # `write_repository` and store it as the `GITLAB_TOKEN` Actions secret.

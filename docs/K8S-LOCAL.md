@@ -1,6 +1,6 @@
 # Local Kubernetes (kind + Pulumi)
 
-Same resume container as Cloud Run, running on a **local kind cluster**, deployed with Pulumi. Nothing here is public and GitLab CI does not touch this stack.
+Same resume container as Cloud Run, running on a **local kind cluster**, deployed with Pulumi. Nothing here is public, and GitLab CI does not touch this stack.
 
 **Cluster name:** `solla-resume`  
 **Kube context:** `kind-solla-resume`  
@@ -12,7 +12,7 @@ kind has no AWS-style console. This is the object graph Pulumi creates (plus the
 
 ```mermaid
 flowchart TB
-  subgraph laptop [This laptop]
+  subgraph local [Local machine]
     Docker[Docker Desktop]
     PF["kubectl port-forward :8080"]
     Browser[http://localhost:8080]
@@ -39,14 +39,14 @@ kube-system (CoreDNS, apiserver, etc.) is still there; that is the cluster, not 
 
 ## Inspecting it live
 
-**k9s** is a terminal UI. The name is **K8s + s** (“Kubernetes screens,” from the old curses UI library) — not an acronym, and the dog branding is intentional. Pronounce it “k-nine-s” or “canines.”
+**k9s** is a terminal UI for Kubernetes.
 
 ```bash
 brew install k9s
 k9s --context kind-solla-resume -n solla-resume
 ```
 
-`:ns` then pick `solla-resume` if you opened k9s without `-n`. `deploy`, `po`, `svc` are the usual views. Enter a pod for logs/describe. `?` is help, `q` quits. Empty pod list usually means you are in namespace `default`. If the namespace is missing, run `./scripts/k8s-up.sh` first.
+`:ns` then pick `solla-resume` if k9s opened without `-n`. `deploy`, `po`, `svc` are the usual views. Enter a pod for logs/describe. `?` is help, `q` quits. An empty pod list usually means namespace `default`. If the namespace is missing, run `./scripts/k8s-up.sh` first.
 
 **Headlamp** is a desktop Kubernetes console (CNCF / SIG UI). Closest local analog to the EKS or GKE Workloads UI.
 
@@ -55,7 +55,7 @@ brew install --cask headlamp
 open -a Headlamp
 ```
 
-Select kubeconfig context **`kind-solla-resume`**, namespace **`solla-resume`**. Service **Endpoints** vs **EndpointSlice** (`solla-resume-xxxxx`) are two API views of the same pod backends, not two apps. GKE’s console is the cloud equivalent later; do not install Headlamp in-cluster for this lab.
+Select kubeconfig context **`kind-solla-resume`**, namespace **`solla-resume`**. Service **Endpoints** vs **EndpointSlice** (`solla-resume-xxxxx`) are two API views of the same pod backends, not two apps. Headlamp stays a desktop app for this lab; nothing is installed in-cluster.
 
 ## Prerequisites
 
@@ -65,7 +65,7 @@ Select kubeconfig context **`kind-solla-resume`**, namespace **`solla-resume`**.
 - Optional: [k9s](https://k9scli.io/) (`brew install k9s`), [Headlamp](https://headlamp.dev/) (`brew install --cask headlamp`)
 - Pulumi CLI (logged in to the same Pulumi Cloud org as the Cloud Run stack)
 
-## One-shot
+## Bring the lab up
 
 ```bash
 ./scripts/k8s-up.sh
@@ -92,4 +92,4 @@ Tear down the workload **and** delete the kind cluster:
 2. `kind load docker-image` so the node can run it (`imagePullPolicy: Never`).
 3. Creates namespace `solla-resume`, a Deployment (1 replica), and a ClusterIP Service on port 8080.
 
-GKE Autopilot is a separate on-demand stack: [GKE.md](GKE.md). This stack stays laptop-only on purpose.
+GKE Autopilot is a separate on-demand stack: [GKE.md](GKE.md). This stack stays local on purpose.

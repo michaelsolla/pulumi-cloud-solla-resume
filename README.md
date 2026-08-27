@@ -1,14 +1,14 @@
 # Pulumi Cloud — Solla Resume
 
-Portfolio resume site: a **containerized Node.js app** on **Google Cloud Run**, provisioned with **Pulumi TypeScript** on GCP.
+A portfolio resume site: a **containerized Node.js app** on **Google Cloud Run**, provisioned with **Pulumi TypeScript** on GCP.
 
 **Live:** [https://resume.solla.app](https://resume.solla.app)
 
 [![GitLab pipeline](https://gitlab.com/michael.solla/pulumi-cloud-solla-resume/badges/main/pipeline.svg)](https://gitlab.com/michael.solla/pulumi-cloud-solla-resume/-/pipelines?ref=main)
 
-Cloud Run is the always-on public site. Kubernetes is a **lab**: local [kind](docs/K8S-LOCAL.md) plus on-demand [GKE Autopilot](docs/GKE.md) (destroy when idle). This repo stays **Pulumi-first** and **GCP-first**. Plan: [docs/PLAN.md](docs/PLAN.md).
+Cloud Run is the always-on public site. Kubernetes is a **lab**: local [kind](docs/K8S-LOCAL.md) plus on-demand [GKE Autopilot](docs/GKE.md), destroyed when idle. The repo stays **Pulumi-first** and **GCP-first**. Architecture and roadmap: [docs/PLAN.md](docs/PLAN.md).
 
-**Check in on GitHub.** A GitHub Action mirrors refs to GitLab, which is the production CI (WIF → Pulumi → Cloud Run). Do not add a second deploy on GitHub. Forge diagram: [docs/FORGES.md](docs/FORGES.md).
+**GitHub** is the canonical repository (commits and pull requests). A GitHub Action copies git refs to **GitLab**, which runs production CI (Workload Identity Federation → Pulumi → Cloud Run). GitHub Actions does not deploy. Details: [docs/FORGES.md](docs/FORGES.md).
 
 ## Status
 
@@ -16,19 +16,19 @@ Cloud Run is the always-on public site. Kubernetes is a **lab**: local [kind](do
 |--------|--------|
 | Cloud Run + `resume.solla.app` | Live (the site is the proof) |
 | GitLab CI `preview` / `up` via GCP WIF | Live |
-| GitHub → GitLab mirror | Live |
-| kind (laptop) | Optional local lab |
+| GitHub → GitLab git copy | Live |
+| kind (local) | Optional local lab |
 | GKE Autopilot | On-demand, **offline by default**, not in GitLab CI |
 
 ## Tech stack
 
 Pulumi TypeScript · GCP · Cloud Run · Artifact Registry · Docker · GitLab CI + Workload Identity Federation · kind · GKE Autopilot
 
-## Forge
+## Repositories
 
-| Forge | Role |
+| Platform | Role |
 |--------|------|
-| [GitHub](https://github.com/michaelsolla/pulumi-cloud-solla-resume) | Inlet (humans and Cursor Cloud Agents) |
+| [GitHub](https://github.com/michaelsolla/pulumi-cloud-solla-resume) | Canonical git history and pull requests |
 | [GitLab](https://gitlab.com/michael.solla/pulumi-cloud-solla-resume) | Deploy (`pulumi preview` on branches, `pulumi up` on `main`) |
 
 ## Prerequisites
@@ -42,7 +42,7 @@ Pulumi TypeScript · GCP · Cloud Run · Artifact Registry · Docker · GitLab C
 
 ## Getting started
 
-Production deploys from **GitLab CI** after a GitHub merge to `main`. Local Cloud Run stack (needs Docker):
+Production deploys from **GitLab CI** after a GitHub merge to `main`. To apply the Cloud Run stack locally (needs Docker):
 
 ```bash
 # One-time Docker auth for Artifact Registry
@@ -71,7 +71,7 @@ GKE lab (costs money while up): [docs/GKE.md](docs/GKE.md) (`./scripts/gke-up.sh
 
 Custom domain: [docs/CUSTOM-DOMAIN.md](docs/CUSTOM-DOMAIN.md).
 
-See [`.env.example`](.env.example) for local placeholders — **never commit real credentials**.
+See [`.env.example`](.env.example) for local placeholders — do not commit real credentials.
 
 ## Repository layout
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Destroy the GKE Autopilot lab. Run this when you are done demoing.
+# Destroy the GKE Autopilot lab (costs money while the cluster is up).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

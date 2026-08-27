@@ -3,4 +3,4 @@ runtime:
   name: nodejs
   options:
     typescript: true
-description: Hello World on Google Cloud Run, built and deployed with Pulumi
+description: Resume site on Google Cloud Run, built and deployed with Pulumi
