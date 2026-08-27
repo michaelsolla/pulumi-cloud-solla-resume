@@ -133,7 +133,7 @@ const homePage = `<!DOCTYPE html>
     <p class="tagline">
       You're viewing my resume through a <strong>containerized Node.js app</strong> on
       <strong>Google Cloud Run</strong> — built, pushed, and deployed with
-      <strong>Pulumi</strong> on GCP. Kubernetes is a lab, not this URL.
+      <strong>Pulumi</strong> on GCP. Kubernetes is a separate lab; this page is Cloud Run.
     </p>
     <p class="dedication">
       To Maria and Max — thank you for the love, patience, and joy that make every
@@ -181,15 +181,15 @@ flowchart LR
         </pre>
       </div>
       <p class="caption">
-        GitHub is the source of truth. A GitHub Action copies the <em>same git branch</em> to GitLab
-        (workflow name: Mirror to GitLab). GitLab CI runs Pulumi against GCP. GitHub Actions never deploys.
+        GitHub is the source of truth. A GitHub Action copies the <em>same git branch</em> to GitLab.
+        GitLab CI runs Pulumi against GCP. GitHub Actions never deploys.
       </p>
     </div>
     <div class="copy">
       <h2>Why these trade-offs</h2>
       <ul>
         <li><strong>Pulumi, not Terraform.</strong> One TypeScript program for Cloud Run, kind, and Autopilot. This repo is Pulumi-first on purpose — not a second language for the same graph.</li>
-        <li><strong>Cloud Run is the public site.</strong> Always-on and cheap. GKE Autopilot is an on-demand lab, destroyed when idle: the control-plane credit does not cover Pods, and an HTTP(S) load balancer is a $15–20/mo trap. No public GKE URL.</li>
+        <li><strong>Cloud Run is the public site.</strong> Always-on and cheap. GKE Autopilot is an on-demand lab, destroyed when idle: the control-plane credit does not cover Pods, and an HTTP(S) load balancer would add about $15–20/month. No public GKE URL.</li>
         <li><strong>GitHub for git, GitLab for deploy.</strong> Commits and pull requests live on GitHub. A GitHub Action copies each branch to GitLab; GitLab shared runners plus GCP Workload Identity Federation run <code>pulumi up</code>. GitHub Actions never deploys.</li>
       </ul>
       <h2>Security</h2>

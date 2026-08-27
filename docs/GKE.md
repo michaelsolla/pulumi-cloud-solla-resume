@@ -1,6 +1,6 @@
 # GKE Autopilot lab (on-demand)
 
-Same resume app as Cloud Run and local kind, on **GKE Autopilot**. This is a **lab**, not the public site. `resume.solla.app` stays on Cloud Run. There is **no** public GKE URL (ClusterIP + `kubectl port-forward` on purpose — an HTTP(S) load balancer is the ~$15–20/mo trap).
+Same resume app as Cloud Run and local kind, on **GKE Autopilot**. This is a **lab**, not the public site. `resume.solla.app` stays on Cloud Run. There is **no** public GKE URL (ClusterIP + `kubectl port-forward` on purpose — an HTTP(S) load balancer would add about $15–20/month).
 
 **Pulumi project / stack:** `pulumi-gke-lab` / `lab`  
 **Cluster:** `solla-resume-autopilot` in `us-central1`  
