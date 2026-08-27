@@ -103,6 +103,12 @@ const homePage = `<!DOCTYPE html>
       padding: 0.75rem;
     }
     .diagram .mermaid { margin: 0; }
+    .caption {
+      margin: 0.65rem 0 0;
+      color: #64748b;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
     .copy p, .copy li { margin: 0 0 0.55rem; color: #334155; font-size: 0.9rem; line-height: 1.55; }
     .copy ul { margin: 0 0 0.75rem; padding-left: 1.15rem; }
     .copy p:last-child, .copy ul:last-child { margin-bottom: 0; }
@@ -166,21 +172,25 @@ const homePage = `<!DOCTYPE html>
       <div class="diagram">
         <pre class="mermaid">
 flowchart LR
-  GH[GitHub inlet] --> Mirror[Mirror Action]
-  Mirror --> GL[GitLab CI + WIF]
+  GH[GitHub — you commit here] --> Copy[GitHub Action: copy git to GitLab]
+  Copy --> GL[GitLab CI + WIF]
   GL --> CR[Cloud Run]
   CR --> DNS[resume.solla.app]
   GH -.-> Kind[kind — laptop]
   GH -.-> GKE[GKE Autopilot — on demand]
         </pre>
       </div>
+      <p class="caption">
+        Commits land on GitHub. A GitHub Action then copies the <em>same git branch</em> to GitLab
+        (workflow name: Mirror to GitLab). GitLab CI is what runs Pulumi against GCP. GitHub never deploys.
+      </p>
     </div>
     <div class="copy">
       <h2>Why these trade-offs</h2>
       <ul>
         <li><strong>Pulumi, not Terraform.</strong> One TypeScript program for Cloud Run, kind, and Autopilot. This repo is Pulumi-first on purpose — not a second language for the same graph.</li>
         <li><strong>Cloud Run is the public site.</strong> Always-on and cheap. GKE Autopilot is a lab you destroy: the control-plane credit does not cover Pods, and an HTTP(S) load balancer is a $15–20/mo trap. No public GKE URL.</li>
-        <li><strong>GitHub inlet, GitLab deploy.</strong> Cursor Cloud Agents need GitHub. GitLab shared runners plus GCP Workload Identity Federation run <code>pulumi up</code>. GitHub Actions never deploys.</li>
+        <li><strong>GitHub for commits, GitLab for deploy.</strong> Cursor Cloud Agents need GitHub, so that is where code is reviewed. A GitHub Action copies each branch to GitLab; GitLab shared runners plus GCP Workload Identity Federation run <code>pulumi up</code>. GitHub Actions never deploys.</li>
       </ul>
       <h2>Security</h2>
       <p>
