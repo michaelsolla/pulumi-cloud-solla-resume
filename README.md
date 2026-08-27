@@ -2,7 +2,7 @@
 
 Portfolio resume site on **Google Cloud Run**, managed with [Pulumi](https://www.pulumi.com/) TypeScript. Public URL: [https://resume.solla.app](https://resume.solla.app).
 
-Kubernetes (local first, then cheap GKE Autopilot) is the next expansion. This repo stays **Pulumi-first** and **GCP-first**. See [docs/PLAN.md](docs/PLAN.md).
+Kubernetes is local **kind** plus an on-demand **GKE Autopilot** lab (destroy when idle). Cloud Run stays the public site. This repo stays **Pulumi-first** and **GCP-first**. See [docs/PLAN.md](docs/PLAN.md).
 
 **Check in on GitHub.** A GitHub Action mirrors refs to GitLab, which remains the production CI (WIF → Pulumi → Cloud Run). Do not add a second deploy on GitHub. Setup and diagrams: [docs/FORGES.md](docs/FORGES.md).
 
@@ -12,7 +12,9 @@ Kubernetes (local first, then cheap GKE Autopilot) is the next expansion. This r
 
 **Inlet:** GitHub is the source of truth for commits (humans and Cursor Cloud Agents). GitLab is the deploy forge.
 
-**Next:** cheap on-demand GKE Autopilot (after local Kubernetes is boring). See [docs/PLAN.md](docs/PLAN.md) and [docs/K8S-LOCAL.md](docs/K8S-LOCAL.md).
+**Labs:** local kind ([docs/K8S-LOCAL.md](docs/K8S-LOCAL.md)); on-demand GKE Autopilot ([docs/GKE.md](docs/GKE.md)) — not in GitLab CI, tear down with `./scripts/gke-down.sh`.
+
+**Next:** Kubernetes section on `resume.solla.app`. See [docs/PLAN.md](docs/PLAN.md).
 
 ## Prerequisites
 
@@ -49,12 +51,16 @@ See [`.env.example`](.env.example) for local placeholders — **never commit rea
 ├── app/                # Resume container (Dockerfile + server.js)
 ├── infra/              # Pulumi TypeScript (GCP Cloud Run)
 ├── infra-k8s/          # Pulumi TypeScript (local kind)
+├── infra-gke/          # Pulumi TypeScript (GKE Autopilot lab)
 ├── scripts/
 │   ├── k8s-up.sh
-│   └── k8s-down.sh
+│   ├── k8s-down.sh
+│   ├── gke-up.sh
+│   └── gke-down.sh
 ├── docs/
 │   ├── PLAN.md
 │   ├── K8S-LOCAL.md
+│   ├── GKE.md
 │   ├── FORGES.md
 │   └── CUSTOM-DOMAIN.md
 ├── .github/workflows/

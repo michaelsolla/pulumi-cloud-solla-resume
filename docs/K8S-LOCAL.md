@@ -43,10 +43,10 @@ kube-system (CoreDNS, apiserver, etc.) is still there; that is the cluster, not 
 
 ```bash
 brew install k9s
-k9s --context kind-solla-resume
+k9s --context kind-solla-resume -n solla-resume
 ```
 
-Once inside: `:ns` then pick `solla-resume`. `deploy`, `po`, `svc` are the usual views. Enter a pod for logs/describe. `?` is help, `q` quits. If the namespace is missing, the workload is not applied — run `./scripts/k8s-up.sh` first.
+`:ns` then pick `solla-resume` if you opened k9s without `-n`. `deploy`, `po`, `svc` are the usual views. Enter a pod for logs/describe. `?` is help, `q` quits. Empty pod list usually means you are in namespace `default`. If the namespace is missing, run `./scripts/k8s-up.sh` first.
 
 **Headlamp** is a desktop Kubernetes console (CNCF / SIG UI). Closest local analog to the EKS or GKE Workloads UI.
 
@@ -55,7 +55,7 @@ brew install --cask headlamp
 open -a Headlamp
 ```
 
-Add/select kubeconfig context **`kind-solla-resume`**, then open namespace `solla-resume`. You should see the Deployment, Pod, and Service. GKE’s console is the cloud equivalent later; do not install Headlamp in-cluster for this lab.
+Select kubeconfig context **`kind-solla-resume`**, namespace **`solla-resume`**. Service **Endpoints** vs **EndpointSlice** (`solla-resume-xxxxx`) are two API views of the same pod backends, not two apps. GKE’s console is the cloud equivalent later; do not install Headlamp in-cluster for this lab.
 
 ## Prerequisites
 
@@ -92,4 +92,4 @@ Tear down the workload **and** delete the kind cluster:
 2. `kind load docker-image` so the node can run it (`imagePullPolicy: Never`).
 3. Creates namespace `solla-resume`, a Deployment (1 replica), and a ClusterIP Service on port 8080.
 
-GKE Autopilot comes later; this stack is laptop-only on purpose.
+GKE Autopilot is a separate on-demand stack: [GKE.md](GKE.md). This stack stays laptop-only on purpose.
