@@ -20,7 +20,7 @@ gcloud components install gke-gcloud-auth-plugin
 export PATH="$(gcloud info --format='value(installation.sdk_root)')/bin:$PATH"
 ```
 
-`./scripts/gke-up.sh` prepends that SDK bin dir for the duration of the script. **New terminals still need the `export PATH=...` line** (or add it to `~/.zshrc`).
+`./scripts/gke-up.sh` and `./scripts/gke-down.sh` prepend that SDK bin dir for the duration of the script. **New terminals still need the `export PATH=...` line** (or add it to `~/.zshrc`).
 
 ## Cost
 
