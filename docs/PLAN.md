@@ -1,6 +1,6 @@
 # Solla resume site — project plan
 
-Portfolio and skill-building repo: a containerized resume app on **GCP**, provisioned with **Pulumi TypeScript**. Cloud Run is the always-on public site. Local **kind** and on-demand **GKE Autopilot** are proven. Next is making `resume.solla.app` (and the GitHub README) readable to an **engineering manager** in about 90 seconds: architecture, trade-offs, honest status, and security. Terraform is an optional later appendix — this repo stays Pulumi-first.
+Portfolio and skill-building repo: a containerized resume app on **GCP**, provisioned with **Pulumi TypeScript**. Cloud Run is the always-on public site. Local **kind** and on-demand **GKE Autopilot** are proven. `resume.solla.app` is meant to be readable to an **engineering manager** in about 90 seconds: architecture, trade-offs, honest status, and security. Terraform is an optional later appendix — this repo stays Pulumi-first.
 
 **GCP project:** `pulumi-gcp-ed-msolla`  
 **Region:** `us-central1`  
@@ -126,16 +126,16 @@ pulumi-cloud-solla-resume/
 
 GKE free tier = one Autopilot **control plane** credit, not free Pods. No always-on public GKE URL.
 
-### 3. Site as EM interview artifact (current)
+### 3. Site as EM interview artifact
 
 What a hiring manager sees in 90 seconds on [resume.solla.app](https://resume.solla.app). High reward, low risk: **HTML/docs on a GitHub PR**. Merge to `main` → GitLab CI → Cloud Run. No GKE, no laptop `pulumi up`.
 
-- [ ] Homepage architecture (Mermaid): GitHub inlet → GitLab CI + WIF → Cloud Run; kind and Autopilot as labs, not the public URL
-- [ ] “Why / trade-offs” (decision-making, not a feature list): Pulumi vs Terraform; Cloud Run always-on vs GKE on-demand; ClusterIP and no HTTP(S) LB; GitHub for agents, GitLab for deploy
-- [ ] Honest status: Cloud Run **live** (this page is the proof); GKE lab **offline by default** (no public GKE URL; do not keep a cluster up just for a green badge)
-- [ ] GitHub + GitLab links; GitLab pipeline badge (WIF deploy)
-- [ ] Security, stated plainly: GCP is keyless WIF. Pulumi Cloud uses a GitLab `PULUMI_ACCESS_TOKEN` (masked, **not** Protected) so feature-branch `preview` works — acceptable for a solo personal repo; a team would use Pulumi OIDC/ESC and protected branches. Do not put that token on GitHub.
-- [ ] README polish: one-paragraph summary, live URL, stack, setup, forge rule (GitHub inlet / GitLab deploy)
+- [x] Homepage architecture (Mermaid): GitHub inlet → GitLab CI + WIF → Cloud Run; kind and Autopilot as labs, not the public URL
+- [x] “Why / trade-offs” (decision-making, not a feature list): Pulumi vs Terraform; Cloud Run always-on vs GKE on-demand; ClusterIP and no HTTP(S) LB; GitHub for agents, GitLab for deploy
+- [x] Honest status: Cloud Run **live** (this page is the proof); GKE lab **offline by default** (no public GKE URL; do not keep a cluster up just for a green badge)
+- [x] GitHub + GitLab links; GitLab pipeline badge (WIF deploy)
+- [x] Security, stated plainly: GCP is keyless WIF. Pulumi Cloud uses a GitLab `PULUMI_ACCESS_TOKEN` (masked, **not** Protected) so feature-branch `preview` works — acceptable for a solo personal repo; a team would use Pulumi OIDC/ESC and protected branches. Do not put that token on GitHub.
+- [x] README polish: one-paragraph summary, live URL, stack, setup, forge rule (GitHub inlet / GitLab deploy)
 
 **Ship path:** `app/server.js` + `README.md` + this file. Cursor on the laptop **or** a Cloud Agent on GitHub; you only need a browser after merge to confirm the live page.
 

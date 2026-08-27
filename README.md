@@ -1,31 +1,48 @@
 # Pulumi Cloud — Solla Resume
 
-Portfolio resume site on **Google Cloud Run**, managed with [Pulumi](https://www.pulumi.com/) TypeScript. Public URL: [https://resume.solla.app](https://resume.solla.app).
+Portfolio resume site: a **containerized Node.js app** on **Google Cloud Run**, provisioned with **Pulumi TypeScript** on GCP.
 
-Kubernetes is local **kind** plus an on-demand **GKE Autopilot** lab (destroy when idle). Cloud Run stays the public site. This repo stays **Pulumi-first** and **GCP-first**. See [docs/PLAN.md](docs/PLAN.md).
+**Live:** [https://resume.solla.app](https://resume.solla.app)
 
-**Check in on GitHub.** A GitHub Action mirrors refs to GitLab, which remains the production CI (WIF → Pulumi → Cloud Run). Do not add a second deploy on GitHub. Setup and diagrams: [docs/FORGES.md](docs/FORGES.md).
+[![GitLab pipeline](https://gitlab.com/michael.solla/pulumi-cloud-solla-resume/badges/main/pipeline.svg)](https://gitlab.com/michael.solla/pulumi-cloud-solla-resume/-/pipelines?ref=main)
+
+Cloud Run is the always-on public site. Kubernetes is a **lab**: local [kind](docs/K8S-LOCAL.md) plus on-demand [GKE Autopilot](docs/GKE.md) (destroy when idle). This repo stays **Pulumi-first** and **GCP-first**. Plan: [docs/PLAN.md](docs/PLAN.md).
+
+**Check in on GitHub.** A GitHub Action mirrors refs to GitLab, which is the production CI (WIF → Pulumi → Cloud Run). Do not add a second deploy on GitHub. Forge diagram: [docs/FORGES.md](docs/FORGES.md).
 
 ## Status
 
-**Live:** containerized resume on Cloud Run + custom domain, GitLab CI deploying via GCP Workload Identity Federation (keyless).
+| Piece | State |
+|--------|--------|
+| Cloud Run + `resume.solla.app` | Live (the site is the proof) |
+| GitLab CI `preview` / `up` via GCP WIF | Live |
+| GitHub → GitLab mirror | Live |
+| kind (laptop) | Optional local lab |
+| GKE Autopilot | On-demand, **offline by default**, not in GitLab CI |
 
-**Inlet:** GitHub is the source of truth for commits (humans and Cursor Cloud Agents). GitLab is the deploy forge.
+## Tech stack
 
-**Labs:** local kind ([docs/K8S-LOCAL.md](docs/K8S-LOCAL.md)); on-demand GKE Autopilot ([docs/GKE.md](docs/GKE.md)) — not in GitLab CI, tear down with `./scripts/gke-down.sh`.
+Pulumi TypeScript · GCP · Cloud Run · Artifact Registry · Docker · GitLab CI + Workload Identity Federation · kind · GKE Autopilot
 
-**Next:** Kubernetes section on `resume.solla.app`. See [docs/PLAN.md](docs/PLAN.md).
+## Forge
+
+| Forge | Role |
+|--------|------|
+| [GitHub](https://github.com/michaelsolla/pulumi-cloud-solla-resume) | Inlet (humans and Cursor Cloud Agents) |
+| [GitLab](https://gitlab.com/michael.solla/pulumi-cloud-solla-resume) | Deploy (`pulumi preview` on branches, `pulumi up` on `main`) |
 
 ## Prerequisites
 
 - [Pulumi CLI](https://www.pulumi.com/docs/install/)
 - [Node.js](https://nodejs.org/) (LTS recommended)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (running locally)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (running locally, for the Cloud Run image build)
 - [Google Cloud SDK](https://cloud.google.com/sdk) (`gcloud`)
 - GCP project with billing enabled (`pulumi-gcp-ed-msolla`)
 - Application Default Credentials (`gcloud auth application-default login`)
 
 ## Getting started
+
+Production deploys from **GitLab CI** after a GitHub merge to `main`. Local Cloud Run stack (needs Docker):
 
 ```bash
 # One-time Docker auth for Artifact Registry
@@ -40,7 +57,19 @@ pulumi up
 
 Open the `customDomainUrl` / `serviceUrl` output in a browser.
 
-Custom domain notes: [docs/CUSTOM-DOMAIN.md](docs/CUSTOM-DOMAIN.md)
+Run only the app container:
+
+```bash
+cd app
+docker build -t solla-resume:local .
+docker run --rm -p 8080:8080 solla-resume:local
+# http://localhost:8080
+```
+
+Local kind: [docs/K8S-LOCAL.md](docs/K8S-LOCAL.md) (`./scripts/k8s-up.sh`).  
+GKE lab (costs money while up): [docs/GKE.md](docs/GKE.md) (`./scripts/gke-up.sh` / `gke-down.sh`).
+
+Custom domain: [docs/CUSTOM-DOMAIN.md](docs/CUSTOM-DOMAIN.md).
 
 See [`.env.example`](.env.example) for local placeholders — **never commit real credentials**.
 

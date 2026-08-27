@@ -24,11 +24,19 @@ const homePage = `<!DOCTYPE html>
       color: #0f172a;
     }
     header {
-      padding: 1.25rem 1.5rem;
+      padding: 1.25rem 1.5rem 1rem;
       background: linear-gradient(135deg, #fff 0%, #f1f5f9 100%);
       border-bottom: 1px solid #e2e8f0;
     }
     h1 { font-size: 1.35rem; margin: 0 0 0.5rem; font-weight: 650; }
+    h2 {
+      font-size: 0.8rem;
+      margin: 0 0 0.6rem;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
     .tagline { margin: 0 0 0.75rem; color: #334155; font-size: 0.975rem; line-height: 1.5; }
     .dedication {
       margin: 0 0 0.75rem;
@@ -41,8 +49,9 @@ const homePage = `<!DOCTYPE html>
       line-height: 1.5;
     }
     .meta { margin: 0; color: #64748b; font-size: 0.875rem; line-height: 1.6; }
-    .repo-links { margin: 0.5rem 0 0; color: #64748b; font-size: 0.875rem; }
-    .repo-links a { margin-right: 0.75rem; }
+    .repo-links { margin: 0.5rem 0 0; color: #64748b; font-size: 0.875rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem 0.9rem; }
+    .repo-links a { margin-right: 0; }
+    .pipeline-badge { height: 20px; vertical-align: middle; }
     .badges { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.65rem; }
     .badge {
       font-size: 0.75rem;
@@ -53,14 +62,62 @@ const homePage = `<!DOCTYPE html>
       font-weight: 500;
     }
     a { color: #2563eb; }
-    main { flex: 1; padding: 1rem; }
+    .status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0.85rem 0 0;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #334155;
+    }
+    .dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-live { background: #16a34a; }
+    .dot-idle { background: #94a3b8; }
+    .platform {
+      padding: 1.1rem 1.5rem 0.25rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: 1.25rem 1.75rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    .diagram {
+      overflow-x: auto;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+    }
+    .diagram .mermaid { margin: 0; }
+    .copy p, .copy li { margin: 0 0 0.55rem; color: #334155; font-size: 0.9rem; line-height: 1.55; }
+    .copy ul { margin: 0 0 0.75rem; padding-left: 1.15rem; }
+    .copy p:last-child, .copy ul:last-child { margin-bottom: 0; }
+    main { flex: 1; padding: 1rem 1.5rem 1.5rem; }
     embed {
       width: 100%;
-      height: calc(100vh - 12rem);
+      height: calc(100vh - 18rem);
       min-height: 420px;
       border: 1px solid #cbd5e1;
       border-radius: 0.5rem;
       background: #fff;
+    }
+    @media (max-width: 900px) {
+      .platform { grid-template-columns: 1fr; }
+      embed { height: 70vh; }
     }
   </style>
 </head>
@@ -70,7 +127,7 @@ const homePage = `<!DOCTYPE html>
     <p class="tagline">
       You're viewing my resume through a <strong>containerized Node.js app</strong> on
       <strong>Google Cloud Run</strong> — built, pushed, and deployed with
-      <strong>Pulumi</strong> on GCP.
+      <strong>Pulumi</strong> on GCP. Kubernetes is a lab, not this URL.
     </p>
     <p class="dedication">
       To Maria and Max — thank you for the love, patience, and joy that make every
@@ -81,20 +138,66 @@ const homePage = `<!DOCTYPE html>
       <a href="/resume.pdf">Download resume (PDF)</a>
     </p>
     <p class="repo-links">
-      Source code:
-      <a href="https://github.com/michaelsolla/pulumi-cloud-solla-resume" rel="noopener noreferrer" target="_blank">GitHub</a>
-      <a href="https://gitlab.com/michael.solla/pulumi-cloud-solla-resume" rel="noopener noreferrer" target="_blank">GitLab</a>
+      <span>Source:
+        <a href="https://github.com/michaelsolla/pulumi-cloud-solla-resume" rel="noopener noreferrer" target="_blank">GitHub</a>
+        ·
+        <a href="https://gitlab.com/michael.solla/pulumi-cloud-solla-resume" rel="noopener noreferrer" target="_blank">GitLab</a>
+      </span>
+      <a href="https://gitlab.com/michael.solla/pulumi-cloud-solla-resume/-/pipelines?ref=main" rel="noopener noreferrer" target="_blank">
+        <img class="pipeline-badge" alt="GitLab pipeline (main)" src="https://gitlab.com/michael.solla/pulumi-cloud-solla-resume/badges/main/pipeline.svg">
+      </a>
     </p>
     <div class="badges" aria-label="Tech stack">
-      <span class="badge">Docker</span>
-      <span class="badge">Cloud Run</span>
-      <span class="badge">GCP</span>
       <span class="badge">Pulumi</span>
+      <span class="badge">GCP</span>
+      <span class="badge">Cloud Run</span>
+      <span class="badge">Docker</span>
+      <span class="badge">GitLab CI + WIF</span>
+      <span class="badge">GKE Autopilot lab</span>
+    </div>
+    <div class="status" aria-label="Runtime status">
+      <span class="pill"><span class="dot dot-live" aria-hidden="true"></span> Cloud Run — live (this page)</span>
+      <span class="pill"><span class="dot dot-idle" aria-hidden="true"></span> GKE Autopilot lab — offline by default</span>
     </div>
   </header>
+  <section class="platform" aria-label="Architecture and trade-offs">
+    <div>
+      <h2>Architecture</h2>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart LR
+  GH[GitHub inlet] --> Mirror[Mirror Action]
+  Mirror --> GL[GitLab CI + WIF]
+  GL --> CR[Cloud Run]
+  CR --> DNS[resume.solla.app]
+  GH -.-> Kind[kind — laptop]
+  GH -.-> GKE[GKE Autopilot — on demand]
+        </pre>
+      </div>
+    </div>
+    <div class="copy">
+      <h2>Why these trade-offs</h2>
+      <ul>
+        <li><strong>Pulumi, not Terraform.</strong> One TypeScript program for Cloud Run, kind, and Autopilot. This repo is Pulumi-first on purpose — not a second language for the same graph.</li>
+        <li><strong>Cloud Run is the public site.</strong> Always-on and cheap. GKE Autopilot is a lab you destroy: the control-plane credit does not cover Pods, and an HTTP(S) load balancer is a $15–20/mo trap. No public GKE URL.</li>
+        <li><strong>GitHub inlet, GitLab deploy.</strong> Cursor Cloud Agents need GitHub. GitLab shared runners plus GCP Workload Identity Federation run <code>pulumi up</code>. GitHub Actions never deploys.</li>
+      </ul>
+      <h2>Security</h2>
+      <p>
+        GCP is keyless WIF — no service-account JSON in CI. Pulumi Cloud uses a GitLab
+        <code>PULUMI_ACCESS_TOKEN</code> (masked, not Protected) so feature-branch
+        <code>preview</code> works. Fine for a solo personal repo. A team would use Pulumi OIDC/ESC
+        and protected branches. That token is not on GitHub.
+      </p>
+    </div>
+  </section>
   <main>
     <embed src="/resume.pdf" type="application/pdf" title="Michael Solla Resume" />
   </main>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "strict" });
+  </script>
 </body>
 </html>`;
 
