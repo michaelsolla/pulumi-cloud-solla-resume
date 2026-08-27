@@ -1,6 +1,6 @@
 # Solla resume site — project plan
 
-Portfolio and skill-building repo: a containerized resume app on **GCP**, provisioned with **Pulumi TypeScript**. Cloud Run is the always-on public site. Local **kind** is done. On-demand **GKE Autopilot** is proven (destroy when idle). Next is showing that Kubernetes story on the site. Terraform is an optional later appendix — this repo stays Pulumi-first.
+Portfolio and skill-building repo: a containerized resume app on **GCP**, provisioned with **Pulumi TypeScript**. Cloud Run is the always-on public site. Local **kind** and on-demand **GKE Autopilot** are proven. `resume.solla.app` is meant to be readable to an **engineering manager** in about 90 seconds: architecture, trade-offs, honest status, and security. Terraform is an optional later appendix — this repo stays Pulumi-first.
 
 **GCP project:** `pulumi-gcp-ed-msolla`  
 **Region:** `us-central1`  
@@ -121,25 +121,32 @@ pulumi-cloud-solla-resume/
 - [x] Tiny Autopilot workload; **no** HTTP(S) load balancer; create on the **latest** `REGULAR` channel version
 - [x] `scripts/gke-up.sh` / `gke-down.sh` (auth plugin + Homebrew SDK `PATH`)
 - [x] First apply verified: console Workloads 1/1 + port-forward http://localhost:8080
-- [ ] Tear down when idle (`./scripts/gke-down.sh`) — Pods still bill while the cluster is up
+- [x] Tear down when idle (`./scripts/gke-down.sh`) — Pods still bill while the cluster is up; last lab was destroyed after first apply
 - [x] Cloud Run stays the public hub
 
 GKE free tier = one Autopilot **control plane** credit, not free Pods. No always-on public GKE URL.
 
-### 3. Show the work on the site (current)
+### 3. Site as EM interview artifact
 
-- [ ] Kubernetes section on `resume.solla.app` (architecture, “lab offline by default”)
-- [ ] GitLab pipeline badge / link (WIF deploy)
-- [x] GitHub → GitLab mirror
-- [ ] Optional: thin GitHub Actions lint/test (not a second deploy)
+What a hiring manager sees in 90 seconds on [resume.solla.app](https://resume.solla.app). High reward, low risk: **HTML/docs on a GitHub PR**. Merge to `main` → GitLab CI → Cloud Run. No GKE, no laptop `pulumi up`.
 
-There is now a cloud K8s story to point at, even if that cluster is usually destroyed.
+- [x] Homepage architecture (Mermaid): GitHub inlet → GitLab CI + WIF → Cloud Run; kind and Autopilot as labs, not the public URL
+- [x] “Why / trade-offs” (decision-making, not a feature list): Pulumi vs Terraform; Cloud Run always-on vs GKE on-demand; ClusterIP and no HTTP(S) LB; GitHub for agents, GitLab for deploy
+- [x] Honest status: Cloud Run **live** (this page is the proof); GKE lab **offline by default** (no public GKE URL; do not keep a cluster up just for a green badge)
+- [x] GitHub + GitLab links; GitLab pipeline badge (WIF deploy)
+- [x] Security, stated plainly: GCP is keyless WIF. Pulumi Cloud uses a GitLab `PULUMI_ACCESS_TOKEN` (masked, **not** Protected) so feature-branch `preview` works — acceptable for a solo personal repo; a team would use Pulumi OIDC/ESC and protected branches. Do not put that token on GitHub.
+- [x] README polish: one-paragraph summary, live URL, stack, setup, forge rule (GitHub inlet / GitLab deploy)
+
+**Ship path:** `app/server.js` + `README.md` + this file. Cursor on the laptop **or** a Cloud Agent on GitHub; you only need a browser after merge to confirm the live page.
+
+**Not this week (unless leftover time):** live probe of GKE, rotating the Pulumi PAT to OIDC (explain it; don’t rewire CI mid-interview week), Helm, Terraform sidecar, GitHub `workflow_dispatch` for GKE.
 
 ### 4. Optional later
 
 - Helm once a plain Deployment is solid
 - GitHub Actions `workflow_dispatch` for GKE up/down
 - Terraform sidecar **only** if a job hunt needs that signal
+- Pulumi Cloud OIDC / ESC instead of `PULUMI_ACCESS_TOKEN` (team-shaped secret model)
 
 ### Explicitly out of scope
 
@@ -147,6 +154,7 @@ There is now a cloud K8s story to point at, even if that cluster is usually dest
 - Dual-push to GitLab; GitLab MRs unless requested
 - Putting `pulumi up` for GKE on every GitLab `main` pipeline (would leave spend running)
 - Kubernetes Dashboard in-cluster for the laptop lab
+- Always-on public GKE URL / HTTP(S) load balancer for the lab
 
 ---
 
