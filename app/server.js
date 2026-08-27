@@ -172,7 +172,9 @@ const homePage = `<!DOCTYPE html>
       <div class="diagram">
         <pre class="mermaid">
 flowchart LR
-  GH[GitHub] --> Copy[GitHub Action copies git to GitLab]
+  Human[Human] --> GH[GitHub]
+  Agent[Cloud agent] --> GH
+  GH --> Copy[GitHub Action copies git to GitLab]
   Copy --> GL[GitLab CI + WIF]
   GL --> CR[Cloud Run]
   CR --> DNS[resume.solla.app]
@@ -181,8 +183,8 @@ flowchart LR
         </pre>
       </div>
       <p class="caption">
-        GitHub is the source of truth. A GitHub Action copies the <em>same git branch</em> to GitLab.
-        GitLab CI runs Pulumi against GCP. GitHub Actions never deploys.
+        A person or a cloud agent lands work on GitHub. A GitHub Action copies the
+        <em>same git branch</em> to GitLab. GitLab CI runs Pulumi against GCP. GitHub Actions never deploys.
       </p>
     </div>
     <div class="copy">
@@ -190,7 +192,7 @@ flowchart LR
       <ul>
         <li><strong>Pulumi, not Terraform.</strong> One TypeScript program for Cloud Run, kind, and Autopilot. This repo is Pulumi-first on purpose — not a second language for the same graph.</li>
         <li><strong>Cloud Run is the public site.</strong> Always-on and cheap. GKE Autopilot is an on-demand lab, destroyed when idle: the control-plane credit does not cover Pods, and an HTTP(S) load balancer would add about $15–20/month. No public GKE URL.</li>
-        <li><strong>GitHub for git, GitLab for deploy.</strong> Commits and pull requests live on GitHub. A GitHub Action copies each branch to GitLab; GitLab shared runners plus GCP Workload Identity Federation run <code>pulumi up</code>. GitHub Actions never deploys.</li>
+        <li><strong>GitHub for humans and cloud agents, GitLab for deploy.</strong> A person and a Cursor Cloud Agent both open PRs on GitHub — GitLab.com Free cannot issue the project access tokens those agents need. A GitHub Action copies each branch to GitLab; shared runners plus GCP Workload Identity Federation run <code>pulumi up</code>. GitHub Actions never deploys.</li>
       </ul>
       <h2>Security</h2>
       <p>

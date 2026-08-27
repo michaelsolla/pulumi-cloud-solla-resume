@@ -6,7 +6,7 @@ A portfolio resume site: a containerized app on **GCP**, provisioned with **Pulu
 **Region:** `us-central1`  
 **Public URL:** [https://resume.solla.app](https://resume.solla.app)
 
-**GitHub** is the canonical repository. **GitLab** runs production CI. A GitHub Action copies git refs across; see [FORGES.md](FORGES.md).
+**GitHub** is the canonical repository — a person and a cloud agent both open pull requests there. **GitLab** runs production CI. A GitHub Action copies git refs across; see [FORGES.md](FORGES.md).
 
 ---
 
@@ -14,7 +14,7 @@ A portfolio resume site: a containerized app on **GCP**, provisioned with **Pulu
 
 ```mermaid
 flowchart LR
-  subgraph github [GitHub]
+  subgraph github [GitHub — humans and cloud agents]
     App[Resume app + Dockerfile]
     PulumiCR[Pulumi Cloud Run]
     PulumiKind[Pulumi kind]
@@ -90,7 +90,7 @@ pulumi-cloud-solla-resume/
 | Resume container on Cloud Run + `resume.solla.app` | Live |
 | Artifact Registry + digest-pinned Cloud Run deploys + cleanup policies | Live |
 | GitLab CI `preview` / `up` via WIF (keyless) | Live |
-| GitHub as source of truth; Action copies git to GitLab | Live |
+| GitHub as source of truth (humans and cloud agents); Action copies git to GitLab | Live |
 | Local kind + Pulumi (`infra-k8s`), k9s + Headlamp for inspect | Local (not public) |
 | GKE Autopilot lab (`infra-gke/`, stack `lab`) | On-demand (destroyed when idle; not in GitLab CI) |
 
@@ -130,8 +130,8 @@ GKE free tier = one Autopilot **control plane** credit, not free Pods. No always
 
 What a visitor sees in 90 seconds on [resume.solla.app](https://resume.solla.app). HTML and docs; merge to `main` → GitLab CI → Cloud Run. No GKE, no local `pulumi up`.
 
-- [x] Homepage architecture (Mermaid): GitHub → GitLab CI + WIF → Cloud Run; kind and Autopilot as labs, not the public URL
-- [x] Trade-offs (decision-making, not a feature list): Pulumi vs Terraform; Cloud Run always-on vs GKE on-demand; ClusterIP and no HTTP(S) LB; GitHub for git, GitLab for deploy
+- [x] Homepage architecture (Mermaid): human + cloud agent → GitHub → GitLab CI + WIF → Cloud Run; kind and Autopilot as labs, not the public URL
+- [x] Trade-offs (decision-making, not a feature list): Pulumi vs Terraform; Cloud Run always-on vs GKE on-demand; ClusterIP and no HTTP(S) LB; GitHub for humans and cloud agents, GitLab for deploy
 - [x] Honest status: Cloud Run **live** (the page is the proof); GKE lab **offline by default** (no public GKE URL; no cluster left running just for a green badge)
 - [x] GitHub + GitLab links; GitLab pipeline badge (WIF deploy)
 - [x] Security, stated plainly: GCP is keyless WIF. Pulumi Cloud uses a GitLab `PULUMI_ACCESS_TOKEN` (masked, **not** Protected) so feature-branch `preview` can log in — acceptable on a solo personal repo; a team would use Pulumi OIDC/ESC and protected branches. That token is not stored on GitHub.

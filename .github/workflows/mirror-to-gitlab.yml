@@ -1,6 +1,6 @@
 # Mirror this GitHub repository to GitLab.
 #
-# GitHub is the canonical repository (commits and pull requests).
+# GitHub is the canonical repository (humans and cloud agents open PRs).
 # GitLab is production CI (WIF + pulumi preview/up). This workflow
 # copies git only; it is not a deploy pipeline and must not grow a
 # second `pulumi up`.

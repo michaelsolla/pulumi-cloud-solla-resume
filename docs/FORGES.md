@@ -4,15 +4,16 @@ This project uses **two** git hosts, each for a distinct job:
 
 | Platform | Role | Why |
 |---|---|---|
-| **GitHub** | Canonical repository | Commits and pull requests live here. |
+| **GitHub** | Canonical repository | A person and a Cursor Cloud Agent both clone and open PRs here. GitLab.com **Free** cannot issue the project access tokens those agents need. |
 | **GitLab** | Production CI | Shared runners plus Workload Identity Federation run `pulumi preview` / `pulumi up`. GitHub Actions does not deploy. |
 
-GitHub is the source of truth. A GitHub Action copies the same git refs to GitLab so CI can run. Pushing only to GitLab, or adding a second `pulumi up` on GitHub, would split history or duplicate deploys.
+GitHub is the source of truth so both a human and a cloud agent can land work in one place. A GitHub Action copies the same git refs to GitLab so CI can run. Pushing only to GitLab, or adding a second `pulumi up` on GitHub, would split history or duplicate deploys.
 
 ```mermaid
 flowchart LR
   subgraph people [Who writes code]
-    Dev[Developer]
+    Human[Human]
+    Agent[Cloud agent]
   end
 
   subgraph github [GitHub]
@@ -32,7 +33,8 @@ flowchart LR
     CR[Cloud Run — resume.solla.app]
   end
 
-  Dev --> GHRepo
+  Human --> GHRepo
+  Agent --> GHRepo
   GHRepo --> GHPR
   GHRepo --> Copy
   Copy --> GLRepo
@@ -46,7 +48,7 @@ flowchart LR
 
 ## How a change reaches production
 
-1. A branch is committed on **GitHub**.
+1. A person or a cloud agent commits a branch on **GitHub**.
 2. A **GitHub** pull request is the review surface.
 3. The **Mirror to GitLab** Action force-pushes the same ref to GitLab.
 4. GitLab CI runs **`pulumi preview`** on that feature branch (WIF).
@@ -55,7 +57,7 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-  participant Dev as Developer
+  participant Dev as Human or cloud agent
   participant GH as GitHub
   participant GHA as Copy Action
   participant GL as GitLab
@@ -100,6 +102,7 @@ flowchart TB
 | Item | GitHub | GitLab |
 |---|---|---|
 | Source of truth for commits | Yes | Copy |
+| Humans and Cursor Cloud Agents | Yes | Not on Free |
 | `pulumi preview` / `pulumi up` | No | Yes |
 | `PULUMI_ACCESS_TOKEN` | No | Yes (masked, **not** Protected) |
 | `GITLAB_TOKEN` (repo write) | Yes | No |
@@ -170,7 +173,7 @@ The `docker` PATH warning from `gcloud auth configure-docker` is noise. The job 
 
 ## Local git remote
 
-One remote is enough:
+One GitHub `origin` is what both a laptop and a cloud agent see:
 
 ```bash
 git remote -v
@@ -179,7 +182,7 @@ git remote -v
 git push -u origin HEAD
 ```
 
-A second `gitlab` push remote is how the two histories drift. GitHub is the source of truth; GitLab is the follower.
+A second `gitlab` push remote is how the two histories drift, and a cloud agent would not see that remote anyway. GitHub is the source of truth; GitLab is the follower.
 
 ---
 

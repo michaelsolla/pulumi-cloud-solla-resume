@@ -8,7 +8,7 @@ A portfolio resume site: a **containerized Node.js app** on **Google Cloud Run**
 
 Cloud Run is the always-on public site. Kubernetes is a **lab**: local [kind](docs/K8S-LOCAL.md) plus on-demand [GKE Autopilot](docs/GKE.md), destroyed when idle. The repo stays **Pulumi-first** and **GCP-first**. Architecture and roadmap: [docs/PLAN.md](docs/PLAN.md).
 
-**GitHub** is the canonical repository (commits and pull requests). A GitHub Action copies git refs to **GitLab**, which runs production CI (Workload Identity Federation → Pulumi → Cloud Run). GitHub Actions does not deploy. Details: [docs/FORGES.md](docs/FORGES.md).
+**GitHub** is the canonical repository: a person or a Cursor Cloud Agent opens pull requests there. A GitHub Action copies git refs to **GitLab**, which runs production CI (Workload Identity Federation → Pulumi → Cloud Run). GitHub Actions does not deploy. Details: [docs/FORGES.md](docs/FORGES.md).
 
 ## Status
 
@@ -28,7 +28,7 @@ Pulumi TypeScript · GCP · Cloud Run · Artifact Registry · Docker · GitLab C
 
 | Platform | Role |
 |--------|------|
-| [GitHub](https://github.com/michaelsolla/pulumi-cloud-solla-resume) | Canonical git history and pull requests |
+| [GitHub](https://github.com/michaelsolla/pulumi-cloud-solla-resume) | Canonical git and PRs — humans and cloud agents |
 | [GitLab](https://gitlab.com/michael.solla/pulumi-cloud-solla-resume) | Deploy (`pulumi preview` on branches, `pulumi up` on `main`) |
 
 ## Prerequisites
