@@ -1,13 +1,13 @@
 # GKE Autopilot lab (on-demand)
 
-Same resume app as Cloud Run and local kind, on **GKE Autopilot**. This is a **lab**, not the public site. `resume.solla.app` stays on Cloud Run. There is **no** public GKE URL (ClusterIP + `kubectl port-forward` on purpose — an HTTP(S) load balancer is the ~$15–20/mo trap).
+Same resume app as Cloud Run and local kind, on **GKE Autopilot**. This is a **lab**, not the public site. `resume.solla.app` stays on Cloud Run. There is **no** public GKE URL (ClusterIP + `kubectl port-forward` on purpose — an HTTP(S) load balancer would add about $15–20/month).
 
 **Pulumi project / stack:** `pulumi-gke-lab` / `lab`  
 **Cluster:** `solla-resume-autopilot` in `us-central1`  
 **Kube context:** `gke_pulumi-gcp-ed-msolla_us-central1_solla-resume-autopilot`  
-**Not in GitLab CI.** Applying this stack is a laptop (or later workflow_dispatch) action so a forgotten pipeline cannot leave a cluster running.
+**Not in GitLab CI.** The stack is applied locally (or later via `workflow_dispatch`) so a forgotten pipeline cannot leave a cluster running.
 
-First-time `pulumi preview` will ask for a stack name: type **`lab`**.
+First-time `pulumi preview` asks for a stack name: **`lab`**.
 
 ## Prerequisites
 
@@ -16,11 +16,11 @@ First-time `pulumi preview` will ask for a stack name: type **`lab`**.
 
 ```bash
 gcloud components install gke-gcloud-auth-plugin
-# Homebrew gcloud-cli cask: extra binaries are not on PATH until you add:
+# Homebrew gcloud-cli cask: extra binaries are not on PATH until:
 export PATH="$(gcloud info --format='value(installation.sdk_root)')/bin:$PATH"
 ```
 
-`./scripts/gke-up.sh` and `./scripts/gke-down.sh` prepend that SDK bin dir for the duration of the script. **New terminals still need the `export PATH=...` line** (or add it to `~/.zshrc`).
+`./scripts/gke-up.sh` and `./scripts/gke-down.sh` prepend that SDK bin dir for the duration of the script. New terminals still need the `export PATH=...` line (or an equivalent in `~/.zshrc`).
 
 ## Cost
 
@@ -28,7 +28,7 @@ The GKE free-tier credit covers **one Autopilot control plane**. It does **not**
 
 **Destroy when idle:** `./scripts/gke-down.sh`. Credits do not make a leftover cluster free.
 
-## One-shot (after you have reviewed `pulumi preview`)
+## Bring the lab up
 
 ```bash
 export PATH="$(gcloud info --format='value(installation.sdk_root)')/bin:$PATH"
@@ -51,7 +51,7 @@ Tear down:
 1. Enables `container.googleapis.com` and `compute.googleapis.com`.
 2. Creates a regional Autopilot cluster (`deletionProtection: false`) on the **latest** version in the `REGULAR` release channel (not GKE’s slower channel default, which is what shows the console “upgrade available” banner). `pulumi config set releaseChannel RAPID` for the faster stream.
 3. Deploys namespace `solla-resume`, one Deployment (250m / 512Mi — Autopilot minimums), ClusterIP Service.
-4. Image is the Cloud Run stack’s `imageDigest` (Artifact Registry), unless you `pulumi config set image ...`.
+4. Image is the Cloud Run stack’s `imageDigest` (Artifact Registry), unless overridden with `pulumi config set image ...`.
 
 ## Inspect (verified)
 
@@ -67,11 +67,11 @@ gcloud container clusters get-credentials solla-resume-autopilot --region us-cen
 k9s --context gke_pulumi-gcp-ed-msolla_us-central1_solla-resume-autopilot -n solla-resume
 ```
 
-**Headlamp:** macOS GUI apps do **not** inherit your shell `PATH`. GKE kubeconfig authenticates via `gke-gcloud-auth-plugin`, so `open -a Headlamp` often cannot see this cluster even when `kubectl` in the same terminal works. Launch the binary from a shell that already has the SDK bin:
+**Headlamp:** macOS GUI apps do **not** inherit the shell `PATH`. GKE kubeconfig authenticates via `gke-gcloud-auth-plugin`, so `open -a Headlamp` often cannot see this cluster even when `kubectl` in the same terminal works. Launch the binary from a shell that already has the SDK bin:
 
 ```bash
 export PATH="$(gcloud info --format='value(installation.sdk_root)')/bin:$PATH"
 /Applications/Headlamp.app/Contents/MacOS/Headlamp
 ```
 
-Then pick context **`gke_pulumi-gcp-ed-msolla_us-central1_solla-resume-autopilot`**, namespace **`solla-resume`**. If Headlamp still fails, use the GCP Workloads console — that is the intended cloud inspect path.
+Then pick context **`gke_pulumi-gcp-ed-msolla_us-central1_solla-resume-autopilot`**, namespace **`solla-resume`**. If Headlamp still fails, the GCP Workloads console is the intended cloud inspect path.

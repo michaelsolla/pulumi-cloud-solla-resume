@@ -1,28 +1,28 @@
-# GitHub inlet, GitLab production forge
+# GitHub and GitLab
 
-This repo lives on **two personal free forges**. They are not interchangeable:
+This project uses **two** git hosts, each for a distinct job:
 
-| Forge | Role | Why |
+| Platform | Role | Why |
 |---|---|---|
-| **GitHub** | Inlet | Cursor Cloud Agents clone and open PRs here. Personal GitLab **Free** cannot issue the project access tokens those agents need. |
-| **GitLab** | Production forge | Shared runners + Workload Identity Federation run `pulumi preview` / `pulumi up`. No second deploy on GitHub. |
+| **GitHub** | Canonical repository | A person and a Cursor Cloud Agent both clone and open PRs here. GitLab.com **Free** cannot issue the project access tokens those agents need. |
+| **GitLab** | Production CI | Shared runners plus Workload Identity Federation run `pulumi preview` / `pulumi up`. GitHub Actions does not deploy. |
 
-Check in on GitHub. GitLab follows. Do not push only to GitLab, and do not add `pulumi up` to GitHub Actions.
+GitHub is the source of truth so both a human and a cloud agent can land work in one place. A GitHub Action copies the same git refs to GitLab so CI can run. Pushing only to GitLab, or adding a second `pulumi up` on GitHub, would split history or duplicate deploys.
 
 ```mermaid
 flowchart LR
   subgraph people [Who writes code]
-    Human[You on a laptop]
-    Agent[Cursor Cloud Agent]
+    Human[Human]
+    Agent[Cloud agent]
   end
 
-  subgraph github [GitHub — inlet]
+  subgraph github [GitHub]
     GHRepo[github.com/michaelsolla/pulumi-cloud-solla-resume]
     GHPR[Pull request]
-    Mirror[Action: Mirror to GitLab]
+    Copy[Action: copy git to GitLab]
   end
 
-  subgraph gitlab [GitLab — production forge]
+  subgraph gitlab [GitLab — production CI]
     GLRepo[gitlab.com/michael.solla/pulumi-cloud-solla-resume]
     Preview["pulumi preview<br/>feature branches"]
     Deploy["pulumi up<br/>main only"]
@@ -36,8 +36,8 @@ flowchart LR
   Human --> GHRepo
   Agent --> GHRepo
   GHRepo --> GHPR
-  GHRepo --> Mirror
-  Mirror --> GLRepo
+  GHRepo --> Copy
+  Copy --> GLRepo
   GLRepo --> Preview
   GLRepo --> Deploy
   Deploy --> WIF
@@ -46,20 +46,20 @@ flowchart LR
 
 ---
 
-## Daily path
+## How a change reaches production
 
-1. Branch and commit on **GitHub** (laptop `origin`, or a Cloud Agent).
-2. Open a **GitHub** pull request. Review happens there.
+1. A person or a cloud agent commits a branch on **GitHub**.
+2. A **GitHub** pull request is the review surface.
 3. The **Mirror to GitLab** Action force-pushes the same ref to GitLab.
-4. GitLab CI runs **`pulumi preview`** on that feature branch (WIF, same as today).
-5. Merge the GitHub PR to `main`.
-6. The Action mirrors `main`. GitLab CI runs **`pulumi up`** and Cloud Run updates.
+4. GitLab CI runs **`pulumi preview`** on that feature branch (WIF).
+5. The GitHub PR merges to `main`.
+6. The Action copies `main`. GitLab CI runs **`pulumi up`** and Cloud Run updates.
 
 ```mermaid
 sequenceDiagram
-  participant Dev as You or Cloud Agent
+  participant Dev as Human or cloud agent
   participant GH as GitHub
-  participant GHA as Mirror Action
+  participant GHA as Copy Action
   participant GL as GitLab
   participant GCP as GCP via WIF
 
@@ -73,7 +73,7 @@ sequenceDiagram
   GL->>GCP: pulumi up
 ```
 
-A GitLab merge request is optional. You only need one if you want to show the GitLab review UI. The deploy job does not wait for a GitLab MR.
+A GitLab merge request is optional. The deploy job does not wait for one.
 
 ---
 
@@ -89,47 +89,47 @@ flowchart TB
     Pulumi["PULUMI_ACCESS_TOKEN<br/>masked, not Protected"]
   end
 
-  subgraph never [Never store on GitHub]
+  subgraph never [Not stored on GitHub]
     WIF[WIF / GCP keys]
     PulumiAgain[Pulumi token]
     SA[Service account JSON]
   end
 
-  Token --> MirrorJob[Mirror to GitLab workflow]
+  Token --> CopyJob[Copy-to-GitLab workflow]
   Pulumi --> DeployJob[GitLab pulumi jobs]
 ```
 
 | Item | GitHub | GitLab |
 |---|---|---|
-| Source of truth for commits | Yes | Mirror |
-| Cursor Cloud Agents | Yes | Not on Free |
+| Source of truth for commits | Yes | Copy |
+| Humans and Cursor Cloud Agents | Yes | Not on Free |
 | `pulumi preview` / `pulumi up` | No | Yes |
 | `PULUMI_ACCESS_TOKEN` | No | Yes (masked, **not** Protected) |
 | `GITLAB_TOKEN` (repo write) | Yes | No |
 | WIF trust (`project_path`) | No | Yes — pinned to this GitLab project |
 
-If you rename or move the GitLab project, update `infra/gitlab-wif.ts` (`gitlabProjectPath`) and `pulumi up` **before** you change the mirror target. WIF will reject jobs from a new path until that Pulumi apply lands.
+If the GitLab project is renamed or moved, `infra/gitlab-wif.ts` (`gitlabProjectPath`) must be updated and `pulumi up` applied **before** the copy target changes. WIF rejects jobs from a new path until that apply lands.
 
 ---
 
-## One-time setup (required before the Action succeeds)
+## How the git copy is configured
 
-Both forges are personal **Free** plans. Use a **user** personal access token on GitLab. Project access tokens are Premium-only and are not available here.
+Both hosts are personal **Free** plans. The copy uses a GitLab **user** personal access token. Project access tokens are Premium-only.
 
-### 1. Confirm the GitLab project exists
+### 1. GitLab project
 
 Default target: `https://gitlab.com/michael.solla/pulumi-cloud-solla-resume`
 
-That path is what WIF already trusts (`gitlabProjectPath` in `infra/gitlab-wif.ts`). Create the project if it is missing. Do not change the path unless you also update WIF.
+That path is what WIF already trusts (`gitlabProjectPath` in `infra/gitlab-wif.ts`). Changing it requires a matching WIF update.
 
-### 2. Create a GitLab personal access token
+### 2. GitLab personal access token
 
 1. GitLab → **Preferences → Access Tokens** (user settings, not the project).
 2. Name it something obvious, e.g. `github-mirror-pulumi-cloud-solla-resume`.
-3. Scope: **`write_repository`** only. Do not add `api` or `sudo`.
+3. Scope: **`write_repository`** only — not `api` or `sudo`.
 4. Copy the token once.
 
-A project **deploy token** with write access also works if you prefer a token that cannot browse your other projects. If you use one, the Action still sends it as `PRIVATE-TOKEN`.
+A project **deploy token** with write access also works if a token that cannot browse other projects is preferred. The Action still sends it as `PRIVATE-TOKEN`.
 
 ### 3. Store the token on GitHub
 
@@ -138,7 +138,7 @@ A project **deploy token** with write access also works if you prefer a token th
    - Name: `GITLAB_TOKEN`
    - Value: the GitLab token from step 2.
 
-Optional repository **variables** (not secrets) if you ever retarget the mirror:
+Optional repository **variables** (not secrets) if the copy target changes:
 
 | Variable | Default |
 |---|---|
@@ -152,44 +152,28 @@ After `GITLAB_TOKEN` is set:
 1. **Actions → Mirror to GitLab → Run workflow**.
 2. Enable **Push every GitHub branch and tag to GitLab**.
 3. Confirm the GitLab project shows the same branches.
-4. Confirm a GitLab pipeline ran on `main` only if you intended to deploy. Feature-branch pipelines should be `pulumi preview` only.
+4. A pipeline on `main` deploys. Feature-branch pipelines are `pulumi preview` only.
 
-Later pushes mirror just the ref that changed. Branch or tag deletes on GitHub delete the same ref on GitLab. The workflow **refuses to delete `main`**.
+Later pushes copy just the ref that changed. Branch or tag deletes on GitHub delete the same ref on GitLab. The workflow **refuses to delete `main`**.
 
-### 5. Let feature-branch preview see the Pulumi token
+### 5. Feature-branch preview and the Pulumi token
 
-GitLab **Protected** variables are injected only on protected branches (usually `main`). Agent branches are not protected, so a Protected `PULUMI_ACCESS_TOKEN` makes `pulumi:preview` fail at `pulumi login`.
+GitLab **Protected** variables are injected only on protected branches (usually `main`). Feature branches are not protected, so a Protected `PULUMI_ACCESS_TOKEN` makes `pulumi:preview` fail at `pulumi login`.
 
 1. GitLab project → **Settings → CI/CD → Variables** → `PULUMI_ACCESS_TOKEN`.
 2. Keep **Masked**.
-3. Uncheck **Protected**.
+3. Leave **Protected** unchecked.
 4. Retry the failed `pulumi:preview` job (or push again).
 
-On this personal repo that is acceptable: only you (and the GitHub mirror token) can push branches. A job-like setup would use a second, non-protected preview token instead of unprotecting the deploy token.
+On this personal repo that is acceptable: only the owner (and the GitHub copy token) can push branches. A team setup would typically use a second, non-protected preview token instead of unprotecting the deploy token.
 
 The `docker` PATH warning from `gcloud auth configure-docker` is noise. The job already has Docker via the `docker:dind` service; Pulumi talks to `DOCKER_HOST`.
 
 ---
 
-## Using Cursor Cloud Agents with this setup
+## Local git remote
 
-Start the agent against the **GitHub** repo, not GitLab.
-
-1. Pick the branch you want as the base (`main`, unless you are stacking on another feature branch).
-2. Tell the agent the outcome, not the forge dance. It will branch, commit, and open a **GitHub** PR.
-3. After the mirror Action is green, GitLab has that branch and should run preview.
-4. Review the GitHub PR (and the GitLab preview job). Merge on GitHub.
-5. Follow-up messages on the **same** agent URL keep that conversation. A new agent on the phone is a new conversation and does not inherit MacBook Composer history.
-
-The agent does not need `PULUMI_ACCESS_TOKEN` or GCP credentials. It only needs to land commits on GitHub. CI is the identity that is allowed to talk to GCP.
-
-If the mirror job is red with **Missing GITLAB_TOKEN**, the GitHub secret is not set yet. The PR can still be reviewed; GitLab will catch up after you add the secret and re-run the workflow.
-
----
-
-## Laptop workflow
-
-Once the secret is in place, one remote is enough:
+One GitHub `origin` is what both a laptop and a cloud agent see:
 
 ```bash
 git remote -v
@@ -198,7 +182,7 @@ git remote -v
 git push -u origin HEAD
 ```
 
-Do not add a `gitlab` push remote “just in case.” Dual-push from the laptop is how the two histories drift, and Cloud Agents cannot see that second remote anyway.
+A second `gitlab` push remote is how the two histories drift, and a cloud agent would not see that remote anyway. GitHub is the source of truth; GitLab is the follower.
 
 ---
 
@@ -217,7 +201,7 @@ A later, thin GitHub Actions **lint/test** workflow is fine. A second Cloud Run 
 
 | Symptom | Likely cause |
 |---|---|
-| Mirror job: Missing `GITLAB_TOKEN` | Secret not created, or created on the wrong GitHub repo / environment. |
+| Copy job: Missing `GITLAB_TOKEN` | Secret not created, or created on the wrong GitHub repo / environment. |
 | `could not read Username for 'https://gitlab.com'` | Git talked to GitLab git HTTP without Basic auth. The workflow now sends `Authorization: Basic` with username `oauth2` and the PAT. Re-run on a commit that includes that fix. |
 | `HTTP 401` / `403` from GitLab | Token expired, wrong scope (`write_repository` required), or the user cannot write that project. |
 | `HTTP 404` from GitLab | Project path is wrong, or the project is private and the token cannot see it. |
@@ -226,4 +210,4 @@ A later, thin GitHub Actions **lint/test** workflow is fine. A second Cloud Run 
 | WIF / `attribute.project_path` errors | GitLab project path no longer matches `infra/gitlab-wif.ts`. |
 | Histories diverge | Someone pushed to GitLab only. Re-run the workflow with **full mirror**. |
 
-The mirror **force-pushes** the GitHub ref. GitLab is the follower. A GitLab-only commit on the same branch will be overwritten the next time GitHub pushes that ref.
+The copy **force-pushes** the GitHub ref. GitLab is the follower. A GitLab-only commit on the same branch is overwritten the next time GitHub pushes that ref.

@@ -17,8 +17,8 @@ const image = new docker.Image("solla-resume", {
   build: {
     context: appPath,
     dockerfile: path.join(appPath, "Dockerfile"),
-    // Native to this Mac + kind node (linux/arm64). Cloud Run still builds
-    // linux/amd64 in the GCP stack.
+    // kind node architecture (linux/arm64 on Apple Silicon). Cloud Run still
+    // builds linux/amd64 in the GCP stack. Change this if the host is amd64.
     platform: "linux/arm64",
   },
 });

@@ -1,6 +1,6 @@
 # Custom domain: resume.solla.app
 
-Map **resume.solla.app** (Cloudflare) to the Cloud Run service using Pulumi + manual DNS in Cloudflare.
+How **resume.solla.app** (Cloudflare DNS) is mapped to the Cloud Run service with Pulumi, plus the one-time DNS records in Cloudflare.
 
 Reference: [Cloud Run custom domains](https://cloud.google.com/run/docs/mapping-custom-domains)
 
@@ -9,13 +9,15 @@ Reference: [Cloud Run custom domains](https://cloud.google.com/run/docs/mapping-
 ## Overview
 
 ```text
-User → resume.solla.app (Cloudflare DNS) → Google Cloud Run (hello-world)
+Visitor → resume.solla.app (Cloudflare DNS) → Google Cloud Run (hello-world)
 ```
 
-1. **Verify** you own `solla.app` in Google (one-time per GCP project).
+1. **Verify** domain ownership of `solla.app` in Google (one-time per GCP project).
 2. **`pulumi up`** — creates `gcp.cloudrun.DomainMapping` and outputs DNS records.
 3. **Cloudflare** — add the DNS record(s) from Pulumi output.
 4. **Wait** — Google provisions a managed SSL cert (often ~15 min, up to 24h).
+
+The Cloud Run service is still named `hello-world` (early project name). The public hostname is `resume.solla.app`.
 
 ---
 
@@ -35,7 +37,7 @@ If `solla.app` is not listed:
 gcloud domains verify solla.app
 ```
 
-That opens Google Search Console. Add the TXT record Google gives you in **Cloudflare DNS** for `solla.app`, then complete verification.
+That opens Google Search Console. Add the TXT record Google provides in **Cloudflare DNS** for `solla.app`, then complete verification.
 
 ---
 
@@ -60,7 +62,7 @@ Show DNS records to add in Cloudflare:
 pulumi stack output dnsRecords
 ```
 
-Typical record for a subdomain (confirm against your output):
+Typical record for a subdomain (confirm against the stack output):
 
 | Type  | Name   | Target                 |
 |-------|--------|------------------------|
@@ -84,11 +86,11 @@ In [Cloudflare Dashboard](https://dash.cloudflare.com) → **solla.app** → **D
 
 ### Why DNS only (grey cloud)?
 
-Cloud Run domain mapping uses a **Google-managed certificate**. Orange-cloud (proxied) traffic can interfere with certificate provisioning or cause SSL mismatches. Start with **DNS only**; you can experiment with proxy later.
+Cloud Run domain mapping uses a **Google-managed certificate**. Orange-cloud (proxied) traffic can interfere with certificate provisioning or cause SSL mismatches. Start with **DNS only**; proxying can be tried later.
 
 ### SSL/TLS settings (if needed)
 
-Cloudflare → **SSL/TLS** → set to **Full** if you later enable proxying. For grey-cloud + Google cert, default settings are usually fine.
+Cloudflare → **SSL/TLS** → set to **Full** if proxying is enabled later. For grey-cloud + Google cert, default settings are usually fine.
 
 ---
 
@@ -128,7 +130,7 @@ gcloud beta run domain-mappings describe --domain resume.solla.app --region us-c
 - `gcp.cloudrun.DomainMapping` — maps `resume.solla.app` → `hello-world`
 - Outputs: `customDomainUrl`, `dnsRecords`
 
-To use a different subdomain later, update config and re-run `pulumi up`:
+To use a different subdomain, update config and re-run `pulumi up`:
 
 ```bash
 pulumi config set customDomain other.solla.app
